@@ -78,7 +78,7 @@ export default function WelcomeOnboarding({ onGetStarted }: WelcomeOnboardingPro
       tagline: "COMPLETE INTEGRATED PLATFORM",
       description: "Welcome to VIZITO. Access verified medical providers, pharmacies, diagnostics, ambulances, and more in a single clinical environment.",
       icon: <Activity className="w-16 h-16 text-sky-600" />,
-      color: "from-sky-500/10 to-indigo-500/10",
+      color: "from-sky-500/10 to-teal-500/10",
       borderColor: "border-sky-100",
       badgeColor: "bg-sky-50 text-sky-800 border-sky-100",
       features: [

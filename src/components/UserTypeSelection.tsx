@@ -48,9 +48,9 @@ export default function UserTypeSelection({ onSelectRole, onBackToLogin }: UserT
       id: 'clinic' as UserRole,
       title: "Clinic Facility",
       description: "Manage multiple doctors, appointments, reception queues, bills, and clinical operations.",
-      icon: <Building className="w-8 h-8 text-indigo-600" />,
+      icon: <Building className="w-8 h-8 text-teal-600" />,
       tag: "Facility",
-      color: "hover:border-indigo-500/30 hover:shadow-indigo-500/5 group-hover:bg-indigo-50 group-hover:border-indigo-100"
+      color: "hover:border-teal-500/30 hover:shadow-teal-500/5 group-hover:bg-teal-50 group-hover:border-teal-100"
     },
     {
       id: 'hospital' as UserRole,
