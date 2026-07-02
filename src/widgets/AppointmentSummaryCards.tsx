@@ -1,57 +1,80 @@
 import React from 'react';
-import { Calendar, Clock, ArrowUpRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Calendar, Clock, DollarSign, Star, ArrowRight } from 'lucide-react';
 
 const AppointmentSummaryCards = () => {
   const navigate = useNavigate();
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {/* Today's Appointments */}
-      <div 
-        onClick={() => navigate('/appointments?filter=today')}
-        className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-teal-200 transition-all cursor-pointer group relative overflow-hidden"
-      >
-        <div className="absolute -right-6 -top-6 w-24 h-24 bg-teal-50 rounded-full blur-2xl group-hover:bg-teal-100 transition-colors pointer-events-none" />
-        
-        <div className="flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-teal-100 text-teal-600 rounded-xl flex items-center justify-center shrink-0">
-              <Calendar className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-500">Today's Appointments</p>
-              <h4 className="text-3xl font-extrabold text-slate-800 mt-1">12</h4>
-            </div>
-          </div>
-          <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-teal-50 group-hover:text-teal-600 transition-colors">
-            <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-teal-600 transition-colors" />
-          </div>
-        </div>
-      </div>
+  const cards = [
+    {
+      label: "Today's Appointments",
+      value: '12',
+      icon: Calendar,
+      iconBg: 'bg-teal-50',
+      iconColor: 'text-teal-600',
+      link: 'View all →',
+      linkColor: 'text-teal-600',
+      onClick: () => navigate('/appointments?filter=today'),
+    },
+    {
+      label: 'Upcoming Appointments',
+      value: '28',
+      icon: Clock,
+      iconBg: 'bg-blue-50',
+      iconColor: 'text-blue-600',
+      link: 'View all →',
+      linkColor: 'text-blue-600',
+      onClick: () => navigate('/appointments?filter=upcoming'),
+    },
+    {
+      label: 'Total Revenue (This Month)',
+      value: '₹1,24,850',
+      icon: DollarSign,
+      iconBg: 'bg-amber-50',
+      iconColor: 'text-amber-600',
+      link: 'View details →',
+      linkColor: 'text-amber-600',
+      onClick: () => navigate('/revenue'),
+    },
+    {
+      label: 'Average Rating',
+      value: '4.8/5',
+      icon: Star,
+      iconBg: 'bg-purple-50',
+      iconColor: 'text-purple-600',
+      link: 'View all reviews →',
+      linkColor: 'text-purple-600',
+      onClick: () => navigate('/reviews'),
+    },
+  ];
 
-      {/* Upcoming Appointments */}
-      <div 
-        onClick={() => navigate('/appointments?filter=upcoming')}
-        className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm hover:shadow-md hover:violet-200 transition-all cursor-pointer group relative overflow-hidden"
-      >
-        <div className="absolute -right-6 -top-6 w-24 h-24 bg-violet-50 rounded-full blur-2xl group-hover:bg-violet-100 transition-colors pointer-events-none" />
-        
-        <div className="flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-violet-100 text-violet-600 rounded-xl flex items-center justify-center shrink-0">
-              <Clock className="w-6 h-6" />
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {cards.map((card) => {
+        const Icon = card.icon;
+        return (
+          <div
+            key={card.label}
+            onClick={card.onClick}
+            className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all cursor-pointer group"
+          >
+            <div className="flex items-start gap-4">
+              <div className={`w-11 h-11 ${card.iconBg} rounded-xl flex items-center justify-center shrink-0`}>
+                <Icon className={`w-5 h-5 ${card.iconColor}`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-slate-500 leading-tight">{card.label}</p>
+                <h4 className="text-2xl font-extrabold text-slate-800 mt-1 leading-none">{card.value}</h4>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-500">Upcoming Appointments</p>
-              <h4 className="text-3xl font-extrabold text-slate-800 mt-1">45</h4>
+            <div className="mt-4">
+              <span className={`text-xs font-semibold ${card.linkColor} group-hover:underline`}>
+                {card.link}
+              </span>
             </div>
           </div>
-          <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-violet-50 group-hover:text-violet-600 transition-colors">
-            <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-violet-600 transition-colors" />
-          </div>
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 };

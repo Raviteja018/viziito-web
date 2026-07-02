@@ -20,11 +20,15 @@ import ProfileLayout from '../screensModules/profile/ProfileLayout';
 import HelpSupportScreen from '../screensModules/support/HelpSupportScreen';
 import SettingsScreen from '../screensModules/settings/SettingsScreen';
 import AppointmentsScreen from '../screensModules/appointments/AppointmentsScreen';
+import CreateAppointmentScreen from '../screensModules/appointments/CreateAppointmentScreen';
+import ConsultationScreen from '../screensModules/appointments/ConsultationScreen';
 import PrescriptionsScreen from '../screensModules/prescriptions/PrescriptionsScreen';
 import PatientsScreen from '../screensModules/patients/PatientsScreen';
+import PatientDetailScreen from '../screensModules/patients/PatientDetailScreen';
 import RevenueScreen from '../screensModules/revenue/RevenueScreen';
 import AvailabilityScreen from '../screensModules/availability/AvailabilityScreen';
 import ReviewsScreen from '../screensModules/reviews/ReviewsScreen';
+import NotificationsScreen from '../screensModules/notifications/NotificationsScreen';
 
 // Patient Screens
 import BookConsultationScreen from '../screensModules/patient/consultations/BookConsultationScreen';
@@ -134,11 +138,15 @@ const AppNavigator = () => {
         {/* Placeholders for other modules */}
         <Route path="/profile" element={<ProfileLayout />} />
         <Route path="/appointments" element={<AppointmentsScreen />} />
+        <Route path="/appointments/create" element={<CreateAppointmentScreen />} />
+        <Route path="/appointments/:appointmentId/consultation" element={<ConsultationScreen />} />
         <Route path="/patients" element={<PatientsScreen />} />
+        <Route path="/patients/:patientId" element={<PatientDetailScreen />} />
         <Route path="/prescriptions" element={<PrescriptionsScreen />} />
         <Route path="/revenue" element={<RevenueScreen />} />
         <Route path="/availability" element={<AvailabilityScreen />} />
         <Route path="/reviews" element={<ReviewsScreen />} />
+        <Route path="/notifications" element={<NotificationsScreen />} />
         <Route path="/settings" element={<SettingsScreen />} />
         <Route path="/help" element={<HelpSupportScreen />} />
       </Route>
