@@ -14,7 +14,7 @@ import RegistrationModule from '../components/RegistrationModule';
 import type { UserRole } from '../components/UserTypeSelection';
 
 // Engines/Modules
-import DashboardEngine from '../engines/DashboardEngine/DashboardEngine';
+import DoctorDashboardEngine from '../engines/DashboardEngine/DoctorDashboardEngine';
 import PatientDashboardEngine from '../engines/DashboardEngine/PatientDashboardEngine';
 import ProfileLayout from '../screensModules/profile/ProfileLayout';
 import HelpSupportScreen from '../screensModules/support/HelpSupportScreen';
@@ -76,7 +76,7 @@ const DashboardRouter = () => {
   if (role === 'diagnostic') return <DiagnosticDashboardEngine />;
   if (role === 'homecare') return <HomecareDashboardEngine />;
   if (role === 'ambulance') return <AmbulanceDashboardEngine />;
-  return <DashboardEngine />;
+  return <DoctorDashboardEngine />;
 };
 
 const AppNavigator = () => {

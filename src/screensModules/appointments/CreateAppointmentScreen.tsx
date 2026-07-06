@@ -251,7 +251,7 @@ export default function CreateAppointmentScreen() {
                 <div className="relative">
                   <select
                     value={provider}
-                    readOnly
+                    disabled
                     className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 pr-9 text-sm text-slate-700 font-medium focus:outline-none cursor-not-allowed"
                   >
                     <option>{provider}</option>

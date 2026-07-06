@@ -16,7 +16,7 @@ const quickActions = [
   { icon: BarChart2, label: 'View Reports', color: 'bg-amber-50 text-amber-700', onClick: '/revenue' },
 ];
 
-const DashboardEngine = () => {
+const DoctorDashboardEngine = () => {
   const navigate = useNavigate();
 
   return (
@@ -126,4 +126,4 @@ const DashboardEngine = () => {
   );
 };
 
-export default DashboardEngine;
+export default DoctorDashboardEngine;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
     Calendar,
@@ -86,7 +86,6 @@ interface SidebarEngineProps {
 
 const SidebarEngine: React.FC<SidebarEngineProps> = ({ isOpen = false, onClose }) => {
     const { role } = useRole();
-    const navigate = useNavigate();
     const location = useLocation();
     const visibleNavItems = allNavItems.filter(item => item.roles.includes(role));
     
