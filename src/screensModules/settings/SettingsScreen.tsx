@@ -14,7 +14,7 @@ const TABS = [
   { id: 'language', label: 'Language', icon: Globe },
 ];
 
-const LANGUAGES = [
+const LANGUAGES: { id: Language; label: string; isDefault?: boolean; native?: string }[] = [
   { id: 'en', label: 'English', isDefault: true },
   { id: 'hi', label: 'Hindi', native: 'हिंदी' },
   { id: 'te', label: 'Telugu', native: 'తెలుగు' },
