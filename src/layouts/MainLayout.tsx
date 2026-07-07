@@ -1,13 +1,17 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import SidebarEngine from '../engines/SidebarEngine/SidebarEngine';
-import { Bell, Search, Menu, ChevronDown } from 'lucide-react';
+import { Bell, Search, Menu, ChevronDown, User, Settings, LogOut } from 'lucide-react';
 import { useRole } from '../store/role/RoleContext';
+import { useLanguage } from '../store/language/LanguageContext';
 import type { UserRole } from '../components/UserTypeSelection';
 
 const MainLayout = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const { role, setRole } = useRole();
+  const navigate = useNavigate();
+  const { t } = useLanguage();
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden relative" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
@@ -42,7 +46,7 @@ const MainLayout = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search patients, appointments, prescriptions..."
+                placeholder={t("Search patients, appointments, prescriptions...")}
                 className="w-full pl-9 pr-14 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition-all"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
@@ -53,7 +57,10 @@ const MainLayout = () => {
 
           <div className="flex items-center gap-3">
             {/* Notification Bell */}
-            <button className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-full transition-colors">
+            <button 
+              onClick={() => navigate('/notifications')}
+              className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-full transition-colors cursor-pointer"
+            >
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-4 h-4 bg-teal-500 rounded-full border-2 border-white flex items-center justify-center">
                 <span className="text-[8px] font-bold text-white leading-none">6</span>
@@ -62,32 +69,94 @@ const MainLayout = () => {
 
             <div className="w-px h-6 bg-slate-200" />
 
-            {/* Doctor Profile */}
-            <div className="flex items-center gap-2.5 cursor-pointer group">
-              <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden shrink-0 ring-2 ring-white shadow-sm">
-                <div className="w-full h-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">AR</span>
+            {/* Doctor Profile Dropdown Trigger */}
+            <div className="relative">
+              <div
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                className="flex items-center gap-2.5 cursor-pointer group hover:bg-slate-50 p-1.5 rounded-xl transition-all"
+              >
+                <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden shrink-0 ring-2 ring-white shadow-sm">
+                  <div className="w-full h-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">AR</span>
+                  </div>
                 </div>
+                <div className="hidden sm:block text-right select-none">
+                  <p className="text-sm font-bold text-slate-800 leading-none">
+                    {role === 'doctor' ? 'Dr. Arjun Reddy' :
+                     role === 'patient' ? 'Meera' :
+                     role === 'clinic' ? 'City Care' :
+                     role === 'hospital' ? 'Apollo Hospital' :
+                     role === 'pharmacy' ? 'MediPlus Pharmacy' :
+                     role === 'diagnostic' ? 'Dr Lal Labs' :
+                     role === 'homecare' ? 'Portea HomeCare' :
+                     'RedCross Dispatch'}
+                  </p>
+                  <p className="text-[10px] text-slate-400 leading-none mt-1 capitalize font-medium">{role}</p>
+                </div>
+                <ChevronDown className="w-4 h-4 text-slate-400 hidden sm:block" />
               </div>
-              <div className="hidden sm:block text-right">
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as UserRole | 'doctor')}
-                  className="block text-sm font-bold text-slate-800 bg-transparent border-none outline-none cursor-pointer appearance-none pr-4"
-                  style={{ backgroundImage: 'none' }}
-                >
-                  <option value="doctor">Dr. Arjun Reddy</option>
-                  <option value="patient">Meera (Patient)</option>
-                  <option value="clinic">City Care (Clinic)</option>
-                  <option value="hospital">Apollo (Hospital)</option>
-                  <option value="pharmacy">MediPlus (Pharmacy)</option>
-                  <option value="diagnostic">Dr Lal (Diagnostic)</option>
-                  <option value="homecare">Portea (Home Care)</option>
-                  <option value="ambulance">RedCross (Ambulance)</option>
-                </select>
-                <p className="text-[11px] text-slate-400 leading-none mt-0.5">Cardiologist</p>
-              </div>
-              <ChevronDown className="w-4 h-4 text-slate-400 hidden sm:block" />
+
+              {isProfileMenuOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-10 cursor-default" 
+                    onClick={() => setIsProfileMenuOpen(false)} 
+                  />
+                  <div 
+                    className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl py-1.5 z-20 animate-fade"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => { setIsProfileMenuOpen(false); navigate('/profile'); }}
+                      className="w-full text-left px-4.5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <User className="w-4 h-4 text-slate-400" /> View Profile
+                    </button>
+
+                    <button
+                      onClick={() => { setIsProfileMenuOpen(false); navigate('/settings'); }}
+                      className="w-full text-left px-4.5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <Settings className="w-4 h-4 text-slate-400" /> {t("Settings")}
+                    </button>
+
+                    <div className="border-t border-slate-100 my-1" />
+
+                    <div className="px-4.5 py-2">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">{t("Switch Role") || "Switch Role"}</p>
+                      <select
+                        value={role}
+                        onChange={(e) => {
+                          setRole(e.target.value as any);
+                          setIsProfileMenuOpen(false);
+                        }}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer focus:border-teal-400 transition-colors"
+                      >
+                        <option value="doctor">Dr. Arjun Reddy</option>
+                        <option value="patient">Meera (Patient)</option>
+                        <option value="clinic">City Care (Clinic)</option>
+                        <option value="hospital">Apollo (Hospital)</option>
+                        <option value="pharmacy">MediPlus (Pharmacy)</option>
+                        <option value="diagnostic">Dr Lal (Diagnostic)</option>
+                        <option value="homecare">Portea (Home Care)</option>
+                        <option value="ambulance">RedCross (Ambulance)</option>
+                      </select>
+                    </div>
+
+                    <div className="border-t border-slate-100 my-1" />
+
+                    <button
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        navigate('/auth/login');
+                      }}
+                      className="w-full text-left px-4.5 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <LogOut className="w-4 h-4 text-rose-500" /> {t("Sign Out")}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </header>

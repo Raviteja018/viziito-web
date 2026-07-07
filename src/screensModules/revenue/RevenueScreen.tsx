@@ -257,7 +257,7 @@ function RevenueChart() {
 
 // ─── Tab Views ────────────────────────────────────────────────────────────────
 
-function OverviewTab() {
+function OverviewTab({ transactions }: { transactions: any[] }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
       {/* Left */}
@@ -303,7 +303,7 @@ function OverviewTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {TRANSACTIONS.slice(0, 5).map(t => (
+                {transactions.slice(0, 5).map(t => (
                   <tr key={t.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap">
                       <p className="text-xs font-semibold text-slate-700">{t.date}</p>
@@ -432,7 +432,16 @@ function OverviewTab() {
   );
 }
 
-function TransactionsTab() {
+function TransactionsTab({ 
+  transactions, 
+  onViewTxn, 
+  onDownloadInvoice 
+}: { 
+  transactions: any[]; 
+  onViewTxn: (t: any) => void; 
+  onDownloadInvoice: (id: string) => void;
+}) {
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
       <div className="lg:col-span-12 space-y-4">
@@ -479,7 +488,7 @@ function TransactionsTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {TRANSACTIONS.map(t => (
+                {transactions.map(t => (
                   <tr key={t.id} className="hover:bg-slate-50/80 transition-colors group">
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <p className="text-xs font-semibold text-slate-700">{t.date}</p>
@@ -496,10 +505,23 @@ function TransactionsTab() {
                     <td className="px-4 py-3.5 text-xs font-bold text-slate-800 whitespace-nowrap">₹{t.amount.toFixed(2)}</td>
                     <td className="px-4 py-3.5 whitespace-nowrap"><StatusBadge status={t.status} /></td>
                     <td className="px-4 py-3.5 text-xs font-semibold text-teal-600 whitespace-nowrap">{t.invoice}</td>
-                    <td className="px-4 py-3.5">
-                      <button className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
+                    <td className="px-4 py-3.5 relative" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => onViewTxn(t)}
+                          className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => onDownloadInvoice(t.id)}
+                          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                          title="Download Invoice"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -513,7 +535,15 @@ function TransactionsTab() {
   );
 }
 
-function SettlementsTab() {
+function SettlementsTab({ 
+  settlements, 
+  onViewSettlement,
+  onRequestSettlement 
+}: { 
+  settlements: any[]; 
+  onViewSettlement: (s: any) => void;
+  onRequestSettlement: (id: string) => void;
+}) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
       {/* Left */}
@@ -541,7 +571,7 @@ function SettlementsTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {SETTLEMENTS.map(s => (
+                {settlements.map(s => (
                   <tr key={s.id} className="hover:bg-slate-50/80 transition-colors group">
                     <td className="px-4 py-3.5 text-xs font-mono font-semibold text-slate-600 whitespace-nowrap">{s.id}</td>
                     <td className="px-4 py-3.5 text-xs font-semibold text-slate-700 whitespace-nowrap">{s.date}</td>
@@ -553,9 +583,23 @@ function SettlementsTab() {
                     <td className="px-4 py-3.5 text-xs font-bold text-slate-800 whitespace-nowrap">{fmt(s.net)}</td>
                     <td className="px-4 py-3.5 whitespace-nowrap"><StatusBadge status={s.status} /></td>
                     <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"><Eye className="w-4 h-4" /></button>
-                        <button className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"><Download className="w-4 h-4" /></button>
+                      <div className="flex items-center gap-1.5">
+                        <button 
+                          onClick={() => onViewSettlement(s)}
+                          className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer" 
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" title="Download Statement"><Download className="w-4 h-4" /></button>
+                        {s.status === 'Pending' && (
+                          <button 
+                            onClick={() => onRequestSettlement(s.id)}
+                            className="bg-teal-700 hover:bg-teal-800 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl transition-all shadow-sm active:scale-95 whitespace-nowrap cursor-pointer ml-1"
+                          >
+                            Request Payout
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -657,7 +701,7 @@ function SettlementsTab() {
   );
 }
 
-function PayoutHistoryTab() {
+function PayoutHistoryTab({ onViewPayout }: { onViewPayout: (p: any) => void }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
       {/* Left */}
@@ -723,9 +767,15 @@ function PayoutHistoryTab() {
                     <td className="px-4 py-3.5 text-xs font-bold text-slate-800 whitespace-nowrap">{fmt(p.net)}</td>
                     <td className="px-4 py-3.5 whitespace-nowrap"><StatusBadge status={p.status} /></td>
                     <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"><Eye className="w-4 h-4" /></button>
-                        <button className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"><Download className="w-4 h-4" /></button>
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => onViewPayout(p)}
+                          className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" title="Download Statement"><Download className="w-4 h-4" /></button>
                       </div>
                     </td>
                   </tr>
@@ -809,6 +859,55 @@ const TABS: Tab[] = ['Overview', 'Transactions', 'Settlements', 'Payout History'
 
 export default function RevenueScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('Overview');
+  const [transactions, setTransactions] = useState<any[]>(TRANSACTIONS);
+  const [settlements, setSettlements] = useState<any[]>(SETTLEMENTS);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
+
+  // Viewing detail modal states
+  const [viewingTxn, setViewingTxn] = useState<any | null>(null);
+  const [viewingSettlement, setViewingSettlement] = useState<any | null>(null);
+  const [viewingPayout, setViewingPayout] = useState<any | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleRequestSettlement = (id: string) => {
+    const targetSettlement = settlements.find(s => s.id === id);
+    if (!targetSettlement) return;
+
+    const updated = settlements.map(s => {
+      if (s.id === id) {
+        return {
+          ...s,
+          status: 'Completed',
+          date: new Date().toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })
+        };
+      }
+      return s;
+    });
+    setSettlements(updated);
+    showToast(`Payout request of ${fmt(targetSettlement.net)} has been successfully initiated!`, 'success');
+  };
+
+  const handleRefundTransaction = (id: string) => {
+    const targetTxn = transactions.find(t => t.id === id);
+    if (!targetTxn) return;
+
+    const updated = transactions.map(t => {
+      if (t.id === id) {
+        return {
+          ...t,
+          status: 'Refunded',
+          earnings: -t.amount
+        };
+      }
+      return t;
+    });
+    setTransactions(updated);
+    showToast(`Transaction ${id} has been refunded.`, 'info');
+  };
 
   const breadcrumb = activeTab !== 'Overview' ? activeTab : null;
 
@@ -910,10 +1009,258 @@ export default function RevenueScreen() {
       </div>
 
       {/* ─── Tab Content ────────────────────────────────────────────────── */}
-      {activeTab === 'Overview'       && <OverviewTab />}
-      {activeTab === 'Transactions'   && <TransactionsTab />}
-      {activeTab === 'Settlements'    && <SettlementsTab />}
-      {activeTab === 'Payout History' && <PayoutHistoryTab />}
+      {activeTab === 'Overview'       && <OverviewTab transactions={transactions} />}
+      {activeTab === 'Transactions'   && <TransactionsTab transactions={transactions} onViewTxn={setViewingTxn} onDownloadInvoice={(id) => showToast(`Invoice for ${id} downloaded successfully.`, 'success')} />}
+      {activeTab === 'Settlements'    && <SettlementsTab settlements={settlements} onViewSettlement={setViewingSettlement} onRequestSettlement={handleRequestSettlement} />}
+      {activeTab === 'Payout History' && <PayoutHistoryTab onViewPayout={setViewingPayout} />}
+
+      {/* TRANSACTION DETAILS MODAL */}
+      {viewingTxn && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+          onClick={() => setViewingTxn(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">Transaction Details</h3>
+                <p className="text-[10px] text-slate-400 mt-0.5">{viewingTxn.id}</p>
+              </div>
+              <button 
+                onClick={() => setViewingTxn(null)}
+                className="p-1 text-slate-400 hover:bg-slate-50 rounded-lg cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="py-4 space-y-3.5 text-xs text-left">
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Patient Name</span>
+                <span className="font-bold text-slate-700">{viewingTxn.patient}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Appointment ID</span>
+                <span className="font-mono font-bold text-slate-700">{viewingTxn.apptId}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Payment Type</span>
+                <span className="font-semibold text-slate-700">{viewingTxn.type}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Payment Method</span>
+                <span className="font-bold text-slate-700">{viewingTxn.method} ({viewingTxn.methodDetail})</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Date & Time</span>
+                <span className="font-semibold text-slate-700">{viewingTxn.date}, {viewingTxn.time}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Gross Amount</span>
+                <span className="font-bold text-slate-700">₹{viewingTxn.amount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Platform Fee (10%)</span>
+                <span className="font-semibold text-slate-500">- ₹{viewingTxn.platform.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2 bg-slate-50/50 p-2 rounded-xl">
+                <span className="text-teal-700 font-bold">Your Net Earnings</span>
+                <span className="font-extrabold text-teal-700">₹{viewingTxn.earnings.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Status</span>
+                <StatusBadge status={viewingTxn.status} />
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-semibold">Invoice Number</span>
+                <span className="font-semibold text-teal-600 font-mono">{viewingTxn.invoice}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              {viewingTxn.status === 'Completed' && (
+                <button 
+                  onClick={() => {
+                    handleRefundTransaction(viewingTxn.id);
+                    setViewingTxn(null);
+                  }}
+                  className="bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-colors"
+                >
+                  Refund Transaction
+                </button>
+              )}
+              <button 
+                onClick={() => setViewingTxn(null)}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SETTLEMENT DETAILS MODAL */}
+      {viewingSettlement && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+          onClick={() => setViewingSettlement(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">Settlement Statement</h3>
+                <p className="text-[10px] text-slate-400 mt-0.5">{viewingSettlement.id}</p>
+              </div>
+              <button 
+                onClick={() => setViewingSettlement(null)}
+                className="p-1 text-slate-400 hover:bg-slate-50 rounded-lg cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="py-4 space-y-3.5 text-xs text-left">
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Settlement Date</span>
+                <span className="font-semibold text-slate-700">{viewingSettlement.date}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Settlement Period</span>
+                <span className="font-bold text-slate-700">{viewingSettlement.period}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Payout Method</span>
+                <span className="font-semibold text-slate-700">{viewingSettlement.method}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Payout Destination</span>
+                <span className="font-mono font-semibold text-slate-500">{viewingSettlement.account}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Gross Amount</span>
+                <span className="font-bold text-slate-700">{fmt(viewingSettlement.amount)}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">TDS / Deductions (2%)</span>
+                <span className="font-semibold text-rose-600">- {fmt(Math.abs(viewingSettlement.tds))}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2 bg-emerald-50/50 p-2 rounded-xl">
+                <span className="text-emerald-700 font-bold">Net Payout Transferred</span>
+                <span className="font-extrabold text-emerald-700">{fmt(viewingSettlement.net)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-semibold">Status</span>
+                <StatusBadge status={viewingSettlement.status} />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              {viewingSettlement.status === 'Pending' && (
+                <button 
+                  onClick={() => {
+                    handleRequestSettlement(viewingSettlement.id);
+                    setViewingSettlement(null);
+                  }}
+                  className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-colors"
+                >
+                  Request Payout
+                </button>
+              )}
+              <button 
+                onClick={() => setViewingSettlement(null)}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PAYOUT DETAILS MODAL */}
+      {viewingPayout && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+          onClick={() => setViewingPayout(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">Payout Details</h3>
+                <p className="text-[10px] text-slate-400 mt-0.5">{viewingPayout.id}</p>
+              </div>
+              <button 
+                onClick={() => setViewingPayout(null)}
+                className="p-1 text-slate-400 hover:bg-slate-50 rounded-lg cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="py-4 space-y-3.5 text-xs text-left">
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Payout Date</span>
+                <span className="font-semibold text-slate-700">{viewingPayout.date}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Period</span>
+                <span className="font-bold text-slate-700">{viewingPayout.period}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Payout Method</span>
+                <span className="font-semibold text-slate-700">{viewingPayout.method}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Paid To</span>
+                <span className="font-semibold text-slate-700 text-right whitespace-pre-line">{viewingPayout.to}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Gross Amount</span>
+                <span className="font-bold text-slate-700">{fmt(viewingPayout.gross)}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2">
+                <span className="text-slate-500 font-semibold">Deductions</span>
+                <span className="font-semibold text-rose-600">{fmt(viewingPayout.deductions)}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-2 bg-teal-50/50 p-2 rounded-xl">
+                <span className="text-teal-700 font-bold">Net Payout</span>
+                <span className="font-extrabold text-teal-700">{fmt(viewingPayout.net)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-semibold">Status</span>
+                <StatusBadge status={viewingPayout.status} />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button 
+                onClick={() => setViewingPayout(null)}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-5 right-5 z-50 animate-fade flex items-center gap-3 bg-slate-900 border border-slate-800 text-white px-5 py-3.5 rounded-2xl shadow-xl max-w-sm">
+          <div className={`w-2 h-2 rounded-full shrink-0 bg-teal-500`} />
+          <p className="text-xs font-bold">{toast.message}</p>
+        </div>
+      )}
     </div>
   );
 }

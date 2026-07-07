@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Plus,
@@ -19,6 +19,11 @@ import {
   Zap,
   Send,
   X,
+  Pencil,
+  Trash2,
+  CheckCircle,
+  AlertCircle,
+  FileText
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -39,31 +44,31 @@ interface Patient {
   appointments: number;
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
-const MOCK_PATIENTS: Patient[] = [
-  { id: 'PAT123456', name: 'Amit Sharma',  initials: 'AS', age: 32, gender: 'Male',   phone: '+91 98765 43210', email: 'amit.sharma@email.com',  lastVisit: '28 May 2025', lastVisitTime: '11:30 AM', status: 'Active',   appointments: 8  },
-  { id: 'PAT123457', name: 'Priya Singh',  initials: 'PS', age: 28, gender: 'Female', phone: '+91 91234 56789', email: 'priya.singh@email.com',   lastVisit: '27 May 2025', lastVisitTime: '04:15 PM', status: 'Active',   appointments: 5  },
-  { id: 'PAT123458', name: 'Ramesh Kumar', initials: 'RK', age: 45, gender: 'Male',   phone: '+91 99876 54321', email: 'ramesh.kumar@email.com',  lastVisit: '27 May 2025', lastVisitTime: '10:20 AM', status: 'Active',   appointments: 12 },
-  { id: 'PAT123459', name: 'Neha Devi',   initials: 'ND', age: 35, gender: 'Female', phone: '+91 93456 78901', email: 'neha.devi@email.com',     lastVisit: '26 May 2025', lastVisitTime: '03:40 PM', status: 'Active',   appointments: 6  },
-  { id: 'PAT123460', name: 'Vikram Singh', initials: 'VS', age: 50, gender: 'Male',   phone: '+91 90000 11223', email: 'vikram.singh@email.com',  lastVisit: '26 May 2025', lastVisitTime: '11:05 AM', status: 'Inactive', appointments: 3  },
-  { id: 'PAT123461', name: 'Anjali Patel', initials: 'AP', age: 29, gender: 'Female', phone: '+91 95555 66778', email: 'anjali.patel@email.com',  lastVisit: '25 May 2025', lastVisitTime: '02:10 PM', status: 'Active',   appointments: 4  },
-  { id: 'PAT123462', name: 'Mohit Jain',   initials: 'MJ', age: 41, gender: 'Male',   phone: '+91 97777 88990', email: 'mohit.jain@email.com',    lastVisit: '25 May 2025', lastVisitTime: '09:30 AM', status: 'Active',   appointments: 7  },
-  { id: 'PAT123463', name: 'Sneha Sharma', initials: 'SS', age: 31, gender: 'Female', phone: '+91 98888 77665', email: 'sneha.sharma@email.com',  lastVisit: '24 May 2025', lastVisitTime: '06:45 PM', status: 'Active',   appointments: 3  },
+// ─── Initial Mock data ────────────────────────────────────────────────────────
+const INITIAL_PATIENTS: Patient[] = [
+  { id: 'PAT123456', name: 'Amit Sharma', initials: 'AS', age: 32, gender: 'Male', phone: '+91 98765 43210', email: 'amit.sharma@email.com', lastVisit: '28 May 2025', lastVisitTime: '11:30 AM', status: 'Active', appointments: 8 },
+  { id: 'PAT123457', name: 'Priya Singh', initials: 'PS', age: 28, gender: 'Female', phone: '+91 91234 56789', email: 'priya.singh@email.com', lastVisit: '27 May 2025', lastVisitTime: '04:15 PM', status: 'Active', appointments: 5 },
+  { id: 'PAT123458', name: 'Ramesh Kumar', initials: 'RK', age: 45, gender: 'Male', phone: '+91 99876 54321', email: 'ramesh.kumar@email.com', lastVisit: '27 May 2025', lastVisitTime: '10:20 AM', status: 'Active', appointments: 12 },
+  { id: 'PAT123459', name: 'Neha Devi', initials: 'ND', age: 35, gender: 'Female', phone: '+91 93456 78901', email: 'neha.devi@email.com', lastVisit: '26 May 2025', lastVisitTime: '03:40 PM', status: 'Active', appointments: 6 },
+  { id: 'PAT123460', name: 'Vikram Singh', initials: 'VS', age: 50, gender: 'Male', phone: '+91 90000 11223', email: 'vikram.singh@email.com', lastVisit: '26 May 2025', lastVisitTime: '11:05 AM', status: 'Inactive', appointments: 3 },
+  { id: 'PAT123461', name: 'Anjali Patel', initials: 'AP', age: 29, gender: 'Female', phone: '+91 95555 66778', email: 'anjali.patel@email.com', lastVisit: '25 May 2025', lastVisitTime: '02:10 PM', status: 'Active', appointments: 4 },
+  { id: 'PAT123462', name: 'Mohit Jain', initials: 'MJ', age: 41, gender: 'Male', phone: '+91 97777 88990', email: 'mohit.jain@email.com', lastVisit: '25 May 2025', lastVisitTime: '09:30 AM', status: 'Active', appointments: 7 },
+  { id: 'PAT123463', name: 'Sneha Sharma', initials: 'SS', age: 31, gender: 'Female', phone: '+91 98888 77665', email: 'sneha.sharma@email.com', lastVisit: '24 May 2025', lastVisitTime: '06:45 PM', status: 'Active', appointments: 3 },
 ];
 
 const TOP_CONDITIONS = [
-  { name: 'Hypertension',    count: 245, icon: Heart,    color: 'text-rose-500' },
-  { name: 'Diabetes',        count: 198, icon: Zap,      color: 'text-amber-500' },
-  { name: 'Asthma',          count: 156, icon: Wind,     color: 'text-sky-500'  },
-  { name: 'Thyroid Disorder',count: 112, icon: Activity, color: 'text-violet-500'},
-  { name: 'Cardiac Disease', count: 98,  icon: Flame,    color: 'text-rose-600' },
+  { name: 'Hypertension', count: 245, icon: Heart, color: 'text-rose-500', dbQuery: 'hypertension' },
+  { name: 'Diabetes', count: 198, icon: Zap, color: 'text-amber-500', dbQuery: 'diabetes' },
+  { name: 'Asthma', count: 156, icon: Wind, color: 'text-sky-500', dbQuery: 'asthma' },
+  { name: 'Thyroid Disorder', count: 112, icon: Activity, color: 'text-violet-500', dbQuery: 'thyroid' },
+  { name: 'Cardiac Disease', count: 98, icon: Flame, color: 'text-rose-600', dbQuery: 'cardiac' },
 ];
 
 const RECENT_NEW_PATIENTS = [
-  { name: 'Karan Verma',    initials: 'KV', date: '22 May 2025', color: 'bg-teal-100   text-teal-700'   },
-  { name: 'Pooja Nair',     initials: 'PN', date: '21 May 2025', color: 'bg-pink-100   text-pink-700'   },
-  { name: 'Siddharth Rao',  initials: 'SR', date: '20 May 2025', color: 'bg-orange-100 text-orange-700' },
-  { name: 'Meera Iyer',     initials: 'MI', date: '19 May 2025', color: 'bg-indigo-100 text-indigo-700' },
+  { name: 'Karan Verma', initials: 'KV', date: '22 May 2025', color: 'bg-teal-100   text-teal-700' },
+  { name: 'Pooja Nair', initials: 'PN', date: '21 May 2025', color: 'bg-pink-100   text-pink-700' },
+  { name: 'Siddharth Rao', initials: 'SR', date: '20 May 2025', color: 'bg-orange-100 text-orange-700' },
+  { name: 'Meera Iyer', initials: 'MI', date: '19 May 2025', color: 'bg-indigo-100 text-indigo-700' },
 ];
 
 const AVATAR_COLORS: Record<string, string> = {
@@ -75,17 +80,41 @@ const AVATAR_COLORS: Record<string, string> = {
   AP: 'bg-amber-100  text-amber-700',
   MJ: 'bg-sky-100    text-sky-700',
   SS: 'bg-rose-100   text-rose-700',
+  KV: 'bg-teal-100   text-teal-700',
+  PN: 'bg-pink-100   text-pink-700',
+  SR: 'bg-orange-100 text-orange-700',
+  MI: 'bg-indigo-100 text-indigo-700',
+};
+
+// Default template for details
+const DEFAULT_PATIENT_DETAILS = {
+  address: 'H.No. 45/A, Gachibowli, Hyderabad, Telangana - 500032',
+  bloodGroup: 'O+',
+  height: '170 cm',
+  weight: '65 kg',
+  allergies: 'None',
+  maritalStatus: 'Single',
+  chronicConditions: [],
+  medications: [],
+  notes: 'No clinical notes added yet.',
+  emergency: { name: 'Emergency Contact', phone: '+91 XXXXX XXXXX' }
 };
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({
-  label, value, sub, icon: Icon, iconColor, iconBg,
+  label, value, sub, icon: Icon, iconColor, iconBg, onClick,
 }: {
   label: string; value: string; sub: string;
   icon: React.ElementType; iconColor: string; iconBg: string;
+  onClick?: () => void;
 }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-start gap-3">
+    <div 
+      onClick={onClick}
+      className={`bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-start gap-3 transition-all ${
+        onClick ? 'cursor-pointer hover:bg-slate-50 active:scale-98' : ''
+      }`}
+    >
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
         <Icon className={`w-5 h-5 ${iconColor}`} />
       </div>
@@ -112,38 +141,40 @@ function Avatar({ initials, size = 'md' }: { initials: string; size?: 'sm' | 'md
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: PatientStatus }) {
   return (
-    <span className={`inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
-      status === 'Active'
+    <span className={`inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${status === 'Active'
         ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
         : 'bg-slate-100 text-slate-500 border-slate-200'
-    }`}>
+      }`}>
       {status}
     </span>
   );
 }
 
 // ─── Donut chart (CSS-only) ───────────────────────────────────────────────────
-function DonutChart() {
-  // Active 87.8% | Inactive 7.9% | New 6.9% (approximate conic-gradient)
+function DonutChart({ total, active, inactive, newCount }: { total: number; active: number; inactive: number; newCount: number }) {
+  const activePct = total > 0 ? (active / total) * 100 : 0;
+  const inactivePct = total > 0 ? (inactive / total) * 100 : 0;
+  const newPct = total > 0 ? (newCount / total) * 100 : 0;
+
   return (
     <div className="flex flex-col items-center">
       <div
-        className="w-28 h-28 rounded-full relative flex items-center justify-center"
+        className="w-28 h-28 rounded-full relative flex items-center justify-center shadow-sm"
         style={{
-          background: 'conic-gradient(#0d9488 0% 87.8%, #e2e8f0 87.8% 95.7%, #fbbf24 95.7% 100%)',
+          background: `conic-gradient(#0d9488 0% ${activePct}%, #e2e8f0 ${activePct}% ${activePct + inactivePct}%, #fbbf24 ${activePct + inactivePct}% 100%)`,
         }}
       >
         {/* Donut hole */}
         <div className="w-[68px] h-[68px] bg-white rounded-full flex flex-col items-center justify-center shadow-inner">
-          <span className="text-lg font-extrabold text-slate-800 leading-none">1,248</span>
+          <span className="text-lg font-extrabold text-slate-800 leading-none">{total}</span>
           <span className="text-[10px] text-slate-400 font-medium">Total</span>
         </div>
       </div>
       <div className="mt-4 space-y-1.5 w-full">
         {[
-          { label: 'Active',         value: '1,096 (87.8%)', color: 'bg-teal-600' },
-          { label: 'Inactive',       value: '98 (7.9%)',     color: 'bg-slate-300' },
-          { label: 'New (This Month)',value: '86 (6.9%)',     color: 'bg-amber-400' },
+          { label: 'Active', value: `${active} (${activePct.toFixed(1)}%)`, color: 'bg-teal-600' },
+          { label: 'Inactive', value: `${inactive} (${inactivePct.toFixed(1)}%)`, color: 'bg-slate-300' },
+          { label: 'New (This Month)', value: `${newCount} (${newPct.toFixed(1)}%)`, color: 'bg-amber-400' },
         ].map(item => (
           <div key={item.label} className="flex items-center gap-2">
             <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${item.color}`} />
@@ -158,27 +189,447 @@ function DonutChart() {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function PatientsScreen() {
-  const [searchTerm, setSearchTerm]     = useState('');
-  const [statusFilter, setStatusFilter] = useState('All Status');
-  const [currentPage, setCurrentPage]   = useState(1);
   const navigate = useNavigate();
   const pageSize = 10;
 
-  const filtered = MOCK_PATIENTS.filter(pt => {
+  // State initialized from localStorage
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All Status');
+  const [dateFilter, setDateFilter] = useState('All');
+  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false);
+  const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Modals state
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
+  // Active items for actions
+  const [activeMenuPatientId, setActiveMenuPatientId] = useState<string | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [messagingRecipient, setMessagingRecipient] = useState<'All' | 'Single'>('All');
+
+  // Forms state
+  const [patientForm, setPatientForm] = useState({
+    name: '', age: '', gender: 'Male', phone: '', email: '',
+    bloodGroup: 'B+', height: '', weight: '', allergies: 'None',
+    maritalStatus: 'Single', address: '', emergencyName: '', emergencyPhone: '', dob: ''
+  });
+  const [messageForm, setMessageForm] = useState({ subject: '', message: '' });
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+
+  // Toast state
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
+
+  // Load data from LocalStorage
+  useEffect(() => {
+    const savedPatients = localStorage.getItem('viziito_patients');
+    if (savedPatients) {
+      try {
+        const parsed = JSON.parse(savedPatients);
+        // Verify if any loaded patient is missing basic fields like phone or status
+        const isCorrupt = parsed.some((p: any) => !p.phone || !p.status);
+        if (isCorrupt) {
+          setPatients(INITIAL_PATIENTS);
+          localStorage.setItem('viziito_patients', JSON.stringify(INITIAL_PATIENTS));
+        } else {
+          setPatients(parsed);
+        }
+      } catch (e) {
+        setPatients(INITIAL_PATIENTS);
+      }
+    } else {
+      setPatients(INITIAL_PATIENTS);
+      localStorage.setItem('viziito_patients', JSON.stringify(INITIAL_PATIENTS));
+    }
+  }, []);
+
+  // Sync to local storage helper
+  const syncPatients = (updated: Patient[]) => {
+    setPatients(updated);
+    localStorage.setItem('viziito_patients', JSON.stringify(updated));
+  };
+
+  const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  // Close menus on document click
+  useEffect(() => {
+    const handleOutsideClick = () => setActiveMenuPatientId(null);
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, []);
+
+  // Handle Form changes
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setPatientForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Submit Add Patient
+  const handleAddPatientSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!patientForm.name || !patientForm.phone) {
+      showToast('Patient name and phone number are required.', 'error');
+      return;
+    }
+
+    const patientId = `PAT${Math.floor(100000 + Math.random() * 900000)}`;
+    const names = patientForm.name.trim().split(' ');
+    const initials = names.length > 1 ? (names[0][0] + names[names.length - 1][0]).toUpperCase() : names[0][0].toUpperCase();
+
+    const newPatient: Patient = {
+      id: patientId,
+      name: patientForm.name,
+      initials,
+      age: parseInt(patientForm.age) || 30,
+      gender: patientForm.gender,
+      phone: patientForm.phone,
+      email: patientForm.email || `${names[0].toLowerCase()}@email.com`,
+      lastVisit: 'Today',
+      lastVisitTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'Active',
+      appointments: 0
+    };
+
+    // Save Basic Patient list
+    const updatedList = [newPatient, ...patients];
+    syncPatients(updatedList);
+
+    // Save Patient Detail record for PatientDetailScreen
+    const newDetail = {
+      id: patientId,
+      name: patientForm.name,
+      initials,
+      avatarColor: 'bg-teal-100 text-teal-700',
+      gender: patientForm.gender,
+      age: parseInt(patientForm.age) || 30,
+      dob: patientForm.dob || '01 Jan 1995',
+      phone: patientForm.phone,
+      email: patientForm.email || `${names[0].toLowerCase()}@email.com`,
+      address: patientForm.address || DEFAULT_PATIENT_DETAILS.address,
+      bloodGroup: patientForm.bloodGroup,
+      height: patientForm.height ? `${patientForm.height} cm` : DEFAULT_PATIENT_DETAILS.height,
+      weight: patientForm.weight ? `${patientForm.weight} kg` : DEFAULT_PATIENT_DETAILS.weight,
+      allergies: patientForm.allergies,
+      maritalStatus: patientForm.maritalStatus,
+      totalAppointments: 0,
+      totalPrescriptions: 0,
+      ongoingTreatments: 0,
+      lastVisit: 'Today',
+      lastVisitType: 'In-Clinic Consultation',
+      chronicConditions: [],
+      medications: [],
+      recentAppointment: {
+        date: 'Today',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        type: 'In-Clinic Consultation',
+        location: 'Clinic Suite A',
+        status: 'Completed',
+        reason: 'New Registration Checkup'
+      },
+      emergency: {
+        name: patientForm.emergencyName || 'None',
+        phone: patientForm.emergencyPhone || 'None'
+      },
+      notes: 'New patient registered.',
+      notesDate: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      notesByDoctor: 'Dr. Arjun Reddy'
+    };
+
+    // Get current details dictionary
+    const savedDetails = localStorage.getItem('viziito_patient_details');
+    let detailsDict: Record<string, any> = {};
+    if (savedDetails) {
+      try { detailsDict = JSON.parse(savedDetails); } catch (err) { }
+    }
+    detailsDict[patientId] = newDetail;
+    localStorage.setItem('viziito_patient_details', JSON.stringify(detailsDict));
+
+    setIsAddModalOpen(false);
+    resetForm();
+    showToast(`Patient ${newPatient.name} successfully registered.`);
+  };
+
+  // Submit Edit Patient
+  const handleEditPatientSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPatient || !patientForm.name || !patientForm.phone) {
+      showToast('Name and phone number are required.', 'error');
+      return;
+    }
+
+    // Update Basic List
+    const updatedList = patients.map(p => {
+      if (p.id === selectedPatient.id) {
+        return {
+          ...p,
+          name: patientForm.name,
+          age: parseInt(patientForm.age) || p.age,
+          gender: patientForm.gender,
+          phone: patientForm.phone,
+          email: patientForm.email,
+        };
+      }
+      return p;
+    });
+    syncPatients(updatedList);
+
+    // Update Details
+    const savedDetails = localStorage.getItem('viziito_patient_details');
+    let detailsDict: Record<string, any> = {};
+    if (savedDetails) {
+      try { detailsDict = JSON.parse(savedDetails); } catch (err) { }
+    }
+
+    if (detailsDict[selectedPatient.id]) {
+      detailsDict[selectedPatient.id] = {
+        ...detailsDict[selectedPatient.id],
+        name: patientForm.name,
+        age: parseInt(patientForm.age) || selectedPatient.age,
+        gender: patientForm.gender,
+        phone: patientForm.phone,
+        email: patientForm.email,
+        bloodGroup: patientForm.bloodGroup,
+        height: patientForm.height.includes('cm') ? patientForm.height : `${patientForm.height} cm`,
+        weight: patientForm.weight.includes('kg') ? patientForm.weight : `${patientForm.weight} kg`,
+        allergies: patientForm.allergies,
+        maritalStatus: patientForm.maritalStatus,
+        address: patientForm.address,
+        emergency: {
+          name: patientForm.emergencyName,
+          phone: patientForm.emergencyPhone
+        }
+      };
+    } else {
+      // Re-create details record if missing
+      detailsDict[selectedPatient.id] = {
+        ...selectedPatient,
+        avatarColor: 'bg-teal-100 text-teal-700',
+        dob: '01 Jan 1990',
+        bloodGroup: patientForm.bloodGroup,
+        height: `${patientForm.height} cm`,
+        weight: `${patientForm.weight} kg`,
+        allergies: patientForm.allergies,
+        maritalStatus: patientForm.maritalStatus,
+        address: patientForm.address,
+        totalAppointments: selectedPatient.appointments,
+        totalPrescriptions: 2,
+        ongoingTreatments: 1,
+        chronicConditions: [],
+        medications: [],
+        emergency: { name: patientForm.emergencyName, phone: patientForm.emergencyPhone },
+        recentAppointment: { date: selectedPatient.lastVisit, time: selectedPatient.lastVisitTime, type: 'Consultation', location: 'Clinic', status: 'Completed', reason: 'Regular Followup' },
+        notes: 'Updated.',
+        notesDate: 'Today',
+        notesByDoctor: 'Dr. Arjun Reddy'
+      };
+    }
+    localStorage.setItem('viziito_patient_details', JSON.stringify(detailsDict));
+
+    setIsEditModalOpen(false);
+    resetForm();
+    showToast(`Patient details for ${patientForm.name} updated successfully.`);
+  };
+
+  // Toggle Active/Inactive Status
+  const togglePatientStatus = (id: string) => {
+    const updated = patients.map(p => {
+      if (p.id === id) {
+        const newStatus: PatientStatus = p.status === 'Active' ? 'Inactive' : 'Active';
+        showToast(`Patient status changed to ${newStatus}.`, 'info');
+        return { ...p, status: newStatus };
+      }
+      return p;
+    });
+    syncPatients(updated);
+  };
+
+  // Delete Patient
+  const handleDeletePatientConfirm = () => {
+    if (!selectedPatient) return;
+
+    // Remove from basic list
+    const updated = patients.filter(p => p.id !== selectedPatient.id);
+    syncPatients(updated);
+
+    // Remove from details
+    const savedDetails = localStorage.getItem('viziito_patient_details');
+    if (savedDetails) {
+      try {
+        const detailsDict = JSON.parse(savedDetails);
+        delete detailsDict[selectedPatient.id];
+        localStorage.setItem('viziito_patient_details', JSON.stringify(detailsDict));
+      } catch (err) { }
+    }
+
+    setIsDeleteConfirmOpen(false);
+    showToast(`Patient profile for ${selectedPatient.name} deleted successfully.`, 'error');
+    setSelectedPatient(null);
+  };
+
+  // Mock CSV Patient Import
+  const handleImportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importFile) {
+      showToast('Please select a CSV/JSON file to upload.', 'error');
+      return;
+    }
+
+    setIsImporting(true);
+    setImportProgress(10);
+
+    const interval = setInterval(() => {
+      setImportProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            const imported: Patient[] = [
+              { id: 'PAT781290', name: 'Tanya Sen', initials: 'TS', age: 34, gender: 'Female', phone: '+91 96521 88990', email: 'tanya.sen@email.com', lastVisit: 'Today', lastVisitTime: '10:00 AM', status: 'Active', appointments: 1 },
+              { id: 'PAT781291', name: 'Rahul Gupta', initials: 'RG', age: 42, gender: 'Male', phone: '+91 88320 12345', email: 'rahul.gupta@email.com', lastVisit: 'Today', lastVisitTime: '11:15 AM', status: 'Active', appointments: 2 }
+            ];
+
+            const updatedList = [...imported, ...patients];
+            syncPatients(updatedList);
+
+            setIsImporting(false);
+            setIsImportModalOpen(false);
+            setImportFile(null);
+            setImportProgress(0);
+            showToast('2 patients successfully imported from CSV file.');
+          }, 300);
+          return 100;
+        }
+        return prev + 30;
+      });
+    }, 200);
+  };
+
+  // Message Send submit
+  const handleSendMessageSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageForm.subject || !messageForm.message) {
+      showToast('Please enter both subject and message body.', 'error');
+      return;
+    }
+
+    setIsMessageModalOpen(false);
+    setMessageForm({ subject: '', message: '' });
+
+    if (messagingRecipient === 'All') {
+      showToast('Broadcast message scheduled and sent to all active patients.', 'success');
+    } else {
+      showToast(`Notification message successfully sent to ${selectedPatient?.name}.`, 'success');
+    }
+  };
+
+  // Pre-fill edit fields
+  const openEditModal = (pt: Patient) => {
+    setSelectedPatient(pt);
+
+    // Try to get existing detailed values
+    const savedDetails = localStorage.getItem('viziito_patient_details');
+    let details: any = null;
+    if (savedDetails) {
+      try {
+        const detailsDict = JSON.parse(savedDetails);
+        details = detailsDict[pt.id];
+      } catch (err) { }
+    }
+
+    setPatientForm({
+      name: pt.name,
+      age: String(pt.age),
+      gender: pt.gender,
+      phone: pt.phone,
+      email: pt.email,
+      bloodGroup: details?.bloodGroup || 'B+',
+      height: details?.height ? details.height.replace(' cm', '') : '',
+      weight: details?.weight ? details.weight.replace(' kg', '') : '',
+      allergies: details?.allergies || 'None',
+      maritalStatus: details?.maritalStatus || 'Single',
+      address: details?.address || '',
+      emergencyName: details?.emergency?.name || '',
+      emergencyPhone: details?.emergency?.phone || '',
+      dob: details?.dob || ''
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const resetForm = () => {
+    setPatientForm({
+      name: '', age: '', gender: 'Male', phone: '', email: '',
+      bloodGroup: 'B+', height: '', weight: '', allergies: 'None',
+      maritalStatus: 'Single', address: '', emergencyName: '', emergencyPhone: '', dob: ''
+    });
+  };
+
+  // Apply filters
+  const filtered = patients.filter(pt => {
     const matchSearch =
       pt.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pt.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pt.phone.includes(searchTerm);
+
     const matchStatus =
       statusFilter === 'All Status' || pt.status === statusFilter;
-    return matchSearch && matchStatus;
+
+    // Condition filter simulation
+    let matchCondition = true;
+    if (selectedCondition) {
+      const q = selectedCondition.toLowerCase();
+      // Let's match specific patients for mock integration:
+      if (q === 'hypertension') {
+        matchCondition = ['PAT123456', 'PAT123458'].includes(pt.id);
+      } else if (q === 'diabetes') {
+        matchCondition = ['PAT123456', 'PAT123459'].includes(pt.id);
+      } else if (q === 'asthma') {
+        matchCondition = ['PAT123456', 'PAT123460'].includes(pt.id);
+      } else {
+        matchCondition = true; // default match
+      }
+    }
+
+    const matchDate =
+      dateFilter === 'All' || pt.lastVisit === dateFilter;
+
+    return matchSearch && matchStatus && matchCondition && matchDate;
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paginated  = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  // Statistics summaries
+  const totalCount = patients.length;
+  const activeCount = patients.filter(p => p.status === 'Active').length;
+  const inactiveCount = patients.filter(p => p.status === 'Inactive').length;
+  const newCount = 8 + (patients.length - INITIAL_PATIENTS.length); // Dynamic counter
 
   return (
     <div className="w-full animate-fade">
+
+      {/* ─── Toast System ─────────────────────────────────────────────────── */}
+      {toast && (
+        <div className="fixed bottom-5 right-5 z-50 animate-fade flex items-center gap-3 bg-slate-900 border border-slate-800 text-white px-5 py-3.5 rounded-2xl shadow-xl max-w-sm">
+          {toast.type === 'success' ? (
+            <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+          ) : toast.type === 'error' ? (
+            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+          ) : (
+            <Activity className="w-5 h-5 text-sky-400 shrink-0" />
+          )}
+          <span className="text-xs font-bold leading-normal">{toast.message}</span>
+        </div>
+      )}
+
       {/* ─── Page Header ──────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4 mb-5">
         <div>
@@ -186,16 +637,26 @@ export default function PatientsScreen() {
           <p className="text-sm text-slate-500 mt-0.5">View, manage and track all your patients</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <button className="flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition-all">
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer"
+          >
             <Download className="w-4 h-4" />
             Import Patients
           </button>
-          <button className="btn btn-primary flex items-center gap-2 px-5 py-2.5 shadow-md shadow-teal-500/20 text-sm">
+          <button
+            onClick={() => { resetForm(); setIsAddModalOpen(true); }}
+            className="btn btn-primary flex items-center gap-2 px-5 py-2.5 shadow-md shadow-teal-500/20 text-sm cursor-pointer"
+          >
             <Plus className="w-4 h-4" />
             Add New Patient
           </button>
-          <button className="p-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 rounded-xl shadow-sm transition-all">
-            <MoreVertical className="w-4 h-4" />
+          <button
+            onClick={() => { setMessagingRecipient('All'); setIsMessageModalOpen(true); }}
+            className="p-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 rounded-xl shadow-sm transition-all cursor-pointer"
+            title="Broadcast Message"
+          >
+            <Send className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -217,18 +678,45 @@ export default function PatientsScreen() {
                 onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 className="w-full bg-transparent border-none focus:outline-none text-sm text-slate-700 placeholder:text-slate-400"
               />
-              {searchTerm && (
-                <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600 transition-colors">
+              {(searchTerm || selectedCondition) && (
+                <button
+                  onClick={() => { setSearchTerm(''); setSelectedCondition(null); }}
+                  className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
-            {/* Date chip */}
-            <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-600 font-medium hover:border-slate-300 transition-all shadow-sm whitespace-nowrap">
-              <Calendar className="w-4 h-4 text-slate-400" />
-              All Time
-            </button>
+            {/* Date range chip */}
+            <div className="relative">
+              <button 
+                onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
+                className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-600 font-medium hover:border-slate-300 transition-all shadow-sm whitespace-nowrap cursor-pointer"
+              >
+                <Calendar className="w-4 h-4 text-slate-400" />
+                {dateFilter === 'All' ? 'All Time' : dateFilter}
+              </button>
+              {isDateFilterOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setIsDateFilterOpen(false)} />
+                  <div className="absolute left-0 mt-1 w-44 bg-white border border-slate-200 shadow-xl rounded-xl py-1.5 z-30 animate-fade text-left">
+                    {['All', '28 May 2025', '27 May 2025', '26 May 2025', '25 May 2025', '24 May 2025'].map(opt => (
+                      <button
+                        key={opt}
+                        onClick={() => {
+                          setDateFilter(opt);
+                          setIsDateFilterOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                      >
+                        {opt === 'All' ? 'All Time' : opt}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Status filter */}
             <div className="relative">
@@ -244,21 +732,64 @@ export default function PatientsScreen() {
               <Filter className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             </div>
 
-            <button className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-600 font-medium hover:border-slate-300 transition-all shadow-sm">
-              <Filter className="w-4 h-4 text-slate-400" />
-              Filters
-            </button>
-            <button className="text-xs font-semibold text-teal-600 hover:text-teal-700 transition-colors px-1">
-              Clear All
-            </button>
+            {(searchTerm || statusFilter !== 'All Status' || dateFilter !== 'All' || selectedCondition) && (
+              <button
+                onClick={() => { setSearchTerm(''); setStatusFilter('All Status'); setDateFilter('All'); setSelectedCondition(null); }}
+                className="text-xs font-semibold text-teal-600 hover:text-teal-700 transition-colors px-1 cursor-pointer"
+              >
+                Clear All
+              </button>
+            )}
           </div>
+
+          {/* Condition Filter indicator */}
+          {selectedCondition && (
+            <div className="flex items-center gap-2 bg-teal-50 text-teal-800 border border-teal-100 rounded-xl px-3.5 py-1.5 text-xs font-semibold w-fit">
+              <span>Showing patients matching condition: <b className="capitalize">{selectedCondition}</b></span>
+              <button onClick={() => setSelectedCondition(null)} className="hover:text-teal-900 cursor-pointer">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
           {/* Stat Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard label="Total Patients"      value="1,248" sub="↑ 12% from last month" icon={Users}     iconColor="text-teal-600"   iconBg="bg-teal-50"   />
-            <StatCard label="New Patients"        value="152"   sub="↑ 8% from last month"  icon={UserPlus}  iconColor="text-sky-600"    iconBg="bg-sky-50"    />
-            <StatCard label="Returning Patients"  value="1,096" sub="↑ 10% from last month" icon={RefreshCw} iconColor="text-violet-600" iconBg="bg-violet-50" />
-            <StatCard label="Patients This Month" value="86"    sub="↑ 5% from last month"  icon={Calendar}  iconColor="text-amber-600"  iconBg="bg-amber-50"  />
+            <StatCard 
+              label="Total Patients" 
+              value={String(totalCount)} 
+              sub="↑ 12% from last month" 
+              icon={Users} 
+              iconColor="text-teal-600" 
+              iconBg="bg-teal-50" 
+              onClick={() => { setStatusFilter('All Status'); setDateFilter('All'); setSelectedCondition(null); }}
+            />
+            <StatCard 
+              label="New Patients" 
+              value={String(newCount)} 
+              sub="↑ 8% from last month" 
+              icon={UserPlus} 
+              iconColor="text-sky-600" 
+              iconBg="bg-sky-50" 
+              onClick={() => { setStatusFilter('Active'); setDateFilter('All'); setSelectedCondition(null); }}
+            />
+            <StatCard 
+              label="Returning Patients" 
+              value={String(activeCount)} 
+              sub="↑ 10% from last month" 
+              icon={RefreshCw} 
+              iconColor="text-violet-600" 
+              iconBg="bg-violet-50" 
+              onClick={() => { setStatusFilter('Active'); setDateFilter('All'); setSelectedCondition(null); }}
+            />
+            <StatCard 
+              label="Patients This Month" 
+              value="86" 
+              sub="↑ 5% from last month" 
+              icon={Calendar} 
+              iconColor="text-amber-600" 
+              iconBg="bg-amber-50" 
+              onClick={() => { setStatusFilter('All Status'); setDateFilter('28 May 2025'); setSelectedCondition(null); }}
+            />
           </div>
 
           {/* Table Card */}
@@ -266,12 +797,12 @@ export default function PatientsScreen() {
             {/* Table Header */}
             <div className="grid grid-cols-12 gap-2 px-5 py-2.5 bg-slate-50 border-b border-slate-100">
               {[
-                { label: 'Patient Details',      span: 'col-span-3' },
-                { label: 'Contact',              span: 'col-span-3' },
-                { label: 'Last Visit',           span: 'col-span-2' },
-                { label: 'Status',               span: 'col-span-1' },
-                { label: 'Total Appointments',   span: 'col-span-2' },
-                { label: 'Actions',              span: 'col-span-1 text-right' },
+                { label: 'Patient Details', span: 'col-span-3' },
+                { label: 'Contact', span: 'col-span-3' },
+                { label: 'Last Visit', span: 'col-span-2' },
+                { label: 'Status', span: 'col-span-1' },
+                { label: 'Total Appointments', span: 'col-span-2' },
+                { label: 'Actions', span: 'col-span-1 text-right' },
               ].map(col => (
                 <div key={col.label} className={`text-[11px] font-bold text-slate-400 uppercase tracking-wider ${col.span}`}>
                   {col.label}
@@ -325,20 +856,63 @@ export default function PatientsScreen() {
                     </div>
 
                     {/* Actions */}
-                    <div className="col-span-1 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="col-span-1 flex items-center justify-end gap-1 relative">
                       <button
                         onClick={e => { e.stopPropagation(); navigate(`/patients/${pt.id}`); }}
-                        className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
                         title="View patient"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
-                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                        onClick={e => {
+                          e.stopPropagation();
+                          setActiveMenuPatientId(activeMenuPatientId === pt.id ? null : pt.id);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                         title="More actions"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
+
+                      {/* Dropdown Menu */}
+                      {activeMenuPatientId === pt.id && (
+                        <div
+                          className="absolute right-0 top-8 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-40 animate-fade"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => { setActiveMenuPatientId(null); openEditModal(pt); }}
+                            className="w-full text-left px-4.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-slate-400" /> Edit Details
+                          </button>
+                          <button
+                            onClick={() => { setActiveMenuPatientId(null); togglePatientStatus(pt.id); }}
+                            className="w-full text-left px-4.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5 text-slate-400" /> Mark {pt.status === 'Active' ? 'Inactive' : 'Active'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setActiveMenuPatientId(null);
+                              setSelectedPatient(pt);
+                              setMessagingRecipient('Single');
+                              setIsMessageModalOpen(true);
+                            }}
+                            className="w-full text-left px-4.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                          >
+                            <Send className="w-3.5 h-3.5 text-slate-400" /> Send Message
+                          </button>
+                          <div className="border-t border-slate-100 my-1" />
+                          <button
+                            onClick={() => { setActiveMenuPatientId(null); setSelectedPatient(pt); setIsDeleteConfirmOpen(true); }}
+                            className="w-full text-left px-4.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-400" /> Delete Profile
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
@@ -354,45 +928,31 @@ export default function PatientsScreen() {
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
 
-                {[1, 2, 3].map(page => (
+                {Array.from({ length: totalPages }).map((_, idx) => (
                   <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
-                      currentPage === page
+                    key={idx + 1}
+                    onClick={() => setCurrentPage(idx + 1)}
+                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${currentPage === idx + 1
                         ? 'bg-teal-600 text-white shadow-sm'
                         : 'border border-slate-200 text-slate-600 hover:border-slate-300'
-                    }`}
+                      }`}
                   >
-                    {page}
+                    {idx + 1}
                   </button>
                 ))}
-                <span className="text-slate-400 text-sm">…</span>
-                <button
-                  onClick={() => setCurrentPage(156)}
-                  className={`w-8 h-8 rounded-lg text-xs font-bold border border-slate-200 text-slate-600 hover:border-slate-300 transition-all`}
-                >
-                  156
-                </button>
 
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
-
-                <select className="ml-2 appearance-none bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-600 focus:outline-none">
-                  <option>10 / page</option>
-                  <option>25 / page</option>
-                  <option>50 / page</option>
-                </select>
               </div>
             </div>
           </div>
@@ -404,18 +964,28 @@ export default function PatientsScreen() {
           {/* Patient Summary Donut */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <h3 className="text-sm font-bold text-slate-800 mb-4">Patient Summary</h3>
-            <DonutChart />
+            <DonutChart total={totalCount} active={activeCount} inactive={inactiveCount} newCount={newCount} />
           </div>
 
           {/* Top Conditions */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-slate-800">Top Conditions</h3>
-              <button className="text-xs font-semibold text-teal-600 hover:text-teal-700 transition-colors">View All</button>
+              <button
+                onClick={() => setSelectedCondition(null)}
+                className="text-xs font-semibold text-teal-600 hover:text-teal-700 transition-colors cursor-pointer"
+              >
+                Clear
+              </button>
             </div>
             <div className="space-y-2.5">
               {TOP_CONDITIONS.map(cond => (
-                <div key={cond.name} className="flex items-center gap-3">
+                <div
+                  key={cond.name}
+                  onClick={() => setSelectedCondition(cond.dbQuery)}
+                  className={`flex items-center gap-3 p-1.5 rounded-xl transition-all cursor-pointer ${selectedCondition === cond.dbQuery ? 'bg-teal-50/70 border border-teal-100' : 'hover:bg-slate-50'
+                    }`}
+                >
                   <div className={`w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center shrink-0`}>
                     <cond.icon className={`w-3.5 h-3.5 ${cond.color}`} />
                   </div>
@@ -430,7 +1000,16 @@ export default function PatientsScreen() {
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-slate-800">Recent New Patients</h3>
-              <button className="text-xs font-semibold text-teal-600 hover:text-teal-700 transition-colors">View All</button>
+              <button
+                onClick={() => {
+                  setSelectedCondition(null);
+                  setSearchTerm('');
+                  showToast('Showing all patient records.');
+                }}
+                className="text-xs font-semibold text-teal-600 hover:text-teal-700 transition-colors cursor-pointer"
+              >
+                View All
+              </button>
             </div>
             <div className="space-y-2.5">
               {RECENT_NEW_PATIENTS.map(p => (
@@ -458,13 +1037,425 @@ export default function PatientsScreen() {
                 </p>
               </div>
             </div>
-            <button className="w-full flex items-center justify-center gap-2 bg-white hover:bg-teal-50 text-teal-700 border border-teal-200 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm">
+            <button
+              onClick={() => { setMessagingRecipient('All'); setIsMessageModalOpen(true); }}
+              className="w-full flex items-center justify-center gap-2 bg-white hover:bg-teal-50 text-teal-700 border border-teal-200 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
+            >
               <Send className="w-4 h-4" />
               Send Message
             </button>
           </div>
         </div>
       </div>
+
+      {/* ─── MODALS ────────────────────────────────────────────────────────── */}
+
+      {/* ADD / EDIT PATIENT MODAL */}
+      {(isAddModalOpen || isEditModalOpen) && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 overflow-y-auto"
+          onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto animate-fade"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <h3 className="text-lg font-bold text-slate-800">
+                {isAddModalOpen ? 'Register New Patient' : `Edit Patient: ${selectedPatient?.name}`}
+              </h3>
+              <button
+                onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}
+                className="p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 rounded-lg transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={isAddModalOpen ? handleAddPatientSubmit : handleEditPatientSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="form-group">
+                  <label className="form-label">Full Name *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={patientForm.name}
+                    onChange={handleFormChange}
+                    placeholder="e.g. Amit Sharma"
+                    className="form-control"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Phone Number *</label>
+                  <input
+                    type="text"
+                    name="phone"
+                    value={patientForm.phone}
+                    onChange={handleFormChange}
+                    placeholder="e.g. +91 98765 43210"
+                    className="form-control"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Email Address</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={patientForm.email}
+                    onChange={handleFormChange}
+                    placeholder="e.g. amit@example.com"
+                    className="form-control"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="form-group">
+                    <label className="form-label">Age</label>
+                    <input
+                      type="number"
+                      name="age"
+                      value={patientForm.age}
+                      onChange={handleFormChange}
+                      placeholder="32"
+                      className="form-control"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Gender</label>
+                    <select
+                      name="gender"
+                      value={patientForm.gender}
+                      onChange={handleFormChange}
+                      className="form-control cursor-pointer"
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="form-group">
+                    <label className="form-label">Blood Group</label>
+                    <select
+                      name="bloodGroup"
+                      value={patientForm.bloodGroup}
+                      onChange={handleFormChange}
+                      className="form-control cursor-pointer"
+                    >
+                      {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => (
+                        <option key={bg} value={bg}>{bg}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Height (cm)</label>
+                    <input
+                      type="text"
+                      name="height"
+                      value={patientForm.height}
+                      onChange={handleFormChange}
+                      placeholder="175"
+                      className="form-control"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Weight (kg)</label>
+                    <input
+                      type="text"
+                      name="weight"
+                      value={patientForm.weight}
+                      onChange={handleFormChange}
+                      placeholder="70"
+                      className="form-control"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Marital Status</label>
+                  <select
+                    name="maritalStatus"
+                    value={patientForm.maritalStatus}
+                    onChange={handleFormChange}
+                    className="form-control cursor-pointer"
+                  >
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Divorced">Divorced</option>
+                    <option value="Widowed">Widowed</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Address</label>
+                <input
+                  type="text"
+                  name="address"
+                  value={patientForm.address}
+                  onChange={handleFormChange}
+                  placeholder="Street, City, Zipcode"
+                  className="form-control"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Known Allergies</label>
+                <input
+                  type="text"
+                  name="allergies"
+                  value={patientForm.allergies}
+                  onChange={handleFormChange}
+                  placeholder="e.g. Penicillin, Pollen, None"
+                  className="form-control"
+                />
+              </div>
+
+              <div className="border-t border-slate-100 pt-3">
+                <h4 className="text-xs font-extrabold text-slate-500 uppercase tracking-wide mb-3">Emergency Contact Info</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="form-group">
+                    <label className="form-label">Contact Name</label>
+                    <input
+                      type="text"
+                      name="emergencyName"
+                      value={patientForm.emergencyName}
+                      onChange={handleFormChange}
+                      placeholder="e.g. Rahul Sharma (Brother)"
+                      className="form-control"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Contact Phone</label>
+                    <input
+                      type="text"
+                      name="emergencyPhone"
+                      value={patientForm.emergencyPhone}
+                      onChange={handleFormChange}
+                      placeholder="e.g. +91 XXXXX XXXXX"
+                      className="form-control"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}
+                  className="btn btn-secondary text-sm cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary text-sm cursor-pointer"
+                >
+                  {isAddModalOpen ? 'Register Patient' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {isDeleteConfirmOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+          onClick={() => setIsDeleteConfirmOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 text-rose-600 mb-3">
+              <AlertCircle className="w-6 h-6" />
+              <h3 className="text-base font-extrabold">Confirm Deletion</h3>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed mb-5">
+              Are you sure you want to permanently delete the patient profile of <b>{selectedPatient?.name}</b> ({selectedPatient?.id})? This action will erase all clinical records, appointments, and prescriptions history.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setIsDeleteConfirmOpen(false)}
+                className="btn btn-secondary text-xs cursor-pointer py-2 px-4"
+              >
+                No, Keep Profile
+              </button>
+              <button
+                onClick={handleDeletePatientConfirm}
+                className="btn bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2 px-4 rounded-xl cursor-pointer"
+              >
+                Yes, Delete Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IMPORT PATIENTS MODAL */}
+      {isImportModalOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+          onClick={() => setIsImportModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <h3 className="text-sm font-bold text-slate-800">Import Patients</h3>
+              <button
+                onClick={() => setIsImportModalOpen(false)}
+                className="p-1 text-slate-400 hover:bg-slate-50 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleImportSubmit} className="space-y-4">
+              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-teal-400 transition-colors flex flex-col items-center gap-2">
+                <FileText className="w-10 h-10 text-slate-400" />
+                <p className="text-xs font-bold text-slate-700">Drag & drop CSV/JSON file here</p>
+                <p className="text-[10px] text-slate-400">or click to browse local files</p>
+                <input
+                  type="file"
+                  accept=".csv,.json"
+                  onChange={e => setImportFile(e.target.files ? e.target.files[0] : null)}
+                  className="hidden"
+                  id="import-file-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('import-file-input')?.click()}
+                  className="mt-2 text-xs font-bold text-teal-600 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg cursor-pointer"
+                >
+                  Browse File
+                </button>
+              </div>
+
+              {importFile && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-700 truncate max-w-[200px]">{importFile.name}</span>
+                  <button type="button" onClick={() => setImportFile(null)} className="text-rose-500 hover:text-rose-600 cursor-pointer">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {isImporting && (
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[11px] font-bold text-slate-500">
+                    <span>Uploading and Parsing data...</span>
+                    <span>{importProgress}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-1.5">
+                    <div className="bg-teal-600 h-1.5 rounded-full transition-all duration-300" style={{ width: `${importProgress}%` }} />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 border-t border-slate-100 pt-3">
+                <button
+                  type="button"
+                  disabled={isImporting}
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="btn btn-secondary text-xs cursor-pointer py-2 px-4"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isImporting || !importFile}
+                  className="btn btn-primary text-xs cursor-pointer py-2 px-4"
+                >
+                  Import data
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* PATIENT COMMUNICATION MODAL */}
+      {isMessageModalOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+          onClick={() => setIsMessageModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-fade"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <h3 className="text-sm font-bold text-slate-800">
+                {messagingRecipient === 'All' ? 'Broadcast Message to Patients' : `Message to: ${selectedPatient?.name}`}
+              </h3>
+              <button
+                onClick={() => setIsMessageModalOpen(false)}
+                className="p-1 text-slate-400 hover:bg-slate-50 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSendMessageSubmit} className="space-y-4">
+              {messagingRecipient === 'All' ? (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium rounded-xl p-3.5">
+                  ⚠️ This message will be sent to all active patients in your database via SMS and registered email address.
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 bg-slate-50 rounded-xl p-3 text-xs font-semibold text-slate-700">
+                  <span>To: <b>{selectedPatient?.name}</b> ({selectedPatient?.phone})</span>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label className="form-label">Subject / Purpose</label>
+                <input
+                  type="text"
+                  value={messageForm.subject}
+                  onChange={e => setMessageForm(prev => ({ ...prev, subject: e.target.value }))}
+                  placeholder="e.g. Clinic Timing Updates or Health Checkup Reminder"
+                  className="form-control"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Message Body</label>
+                <textarea
+                  value={messageForm.message}
+                  onChange={e => setMessageForm(prev => ({ ...prev, message: e.target.value }))}
+                  placeholder="Type your message details here..."
+                  className="form-control h-32"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 border-t border-slate-100 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsMessageModalOpen(false)}
+                  className="btn btn-secondary text-xs cursor-pointer py-2 px-4"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary text-xs cursor-pointer py-2 px-4"
+                >
+                  Send Message
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
