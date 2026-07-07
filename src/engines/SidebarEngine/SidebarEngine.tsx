@@ -91,7 +91,7 @@ const SidebarEngine: React.FC<SidebarEngineProps> = ({ isOpen = false, onClose }
     const location = useLocation();
     const visibleNavItems = allNavItems.filter(item => item.roles.includes(role));
     const [isFooterVisible, setIsFooterVisible] = useState(true);
-    
+
     const isReviewsPage = location.pathname.includes('/reviews');
     const isNotificationsPage = location.pathname.includes('/notifications');
     const isAvailabilityPage = location.pathname.includes('/availability');
@@ -108,7 +108,7 @@ const SidebarEngine: React.FC<SidebarEngineProps> = ({ isOpen = false, onClose }
                 <div className="flex items-center gap-2.5">
                     <img src={logoImg} alt="VIZITO Logo" className="h-9 w-auto object-contain" />
                     <div>
-                        <span className="block text-base font-extrabold text-slate-900 leading-tight">Viziito</span>
+                        <span className="block text-base font-extrabold text-slate-900 leading-tight">vizito</span>
                         <span className="block text-[9px] font-medium text-slate-400 leading-tight">Your Health. Connected.</span>
                     </div>
                 </div>
@@ -180,7 +180,7 @@ const SidebarEngine: React.FC<SidebarEngineProps> = ({ isOpen = false, onClose }
             {isFooterVisible && (
                 <div className="m-3 mt-0 shrink-0 hidden lg:block relative">
                     <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col items-center text-center relative group">
-                        <button 
+                        <button
                             onClick={() => setIsFooterVisible(false)}
                             className="absolute top-2 right-2 p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 rounded-lg transition-colors cursor-pointer"
                             title="Close"

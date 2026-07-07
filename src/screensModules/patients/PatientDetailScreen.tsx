@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Pencil, MoreVertical,
@@ -170,11 +171,11 @@ export default function PatientDetailScreen() {
 
   const [activeTab, setActiveTab] = useState('Overview');
   const [patient, setPatient] = useState<PatientData | null>(null);
-  
+
   // Lists
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [prescriptions, setPrescriptions] = useState<PrescriptionItem[]>([]);
-  
+
   // Modals state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isApptModalOpen, setIsApptModalOpen] = useState(false);
@@ -188,14 +189,14 @@ export default function PatientDetailScreen() {
     address: '', bloodGroup: 'B+', height: '', weight: '',
     allergies: 'None', maritalStatus: 'Single', emergencyName: '', emergencyPhone: ''
   });
-  
+
   const [apptForm, setApptForm] = useState({
     date: '', time: '', type: 'In-Clinic Consultation', reason: ''
   });
 
   // Prescription builder state
   const [rxDiagnosis, setRxDiagnosis] = useState('');
-  const [rxMeds, setRxMeds] = useState<{name: string; dosage: string; frequency: string; duration: string}[]>([]);
+  const [rxMeds, setRxMeds] = useState<{ name: string; dosage: string; frequency: string; duration: string }[]>([]);
   const [newMedName, setNewMedName] = useState('');
   const [newMedDosage, setNewMedDosage] = useState('');
   const [newMedFreq, setNewMedFreq] = useState('');
@@ -212,7 +213,7 @@ export default function PatientDetailScreen() {
   // Load Patient Detail records from LocalStorage
   useEffect(() => {
     // Details
-    const savedDetails = localStorage.getItem('viziito_patient_details');
+    const savedDetails = localStorage.getItem('vizito_patient_details');
     let loadedDetail: PatientData | null = null;
     let detailsDict: Record<string, PatientData> = {};
 
@@ -220,7 +221,7 @@ export default function PatientDetailScreen() {
       try {
         detailsDict = JSON.parse(savedDetails);
         loadedDetail = detailsDict[activeId] || null;
-      } catch (err) {}
+      } catch (err) { }
     }
 
     if (!loadedDetail) {
@@ -261,16 +262,16 @@ export default function PatientDetailScreen() {
 
       // Add to store
       detailsDict[activeId] = loadedDetail;
-      localStorage.setItem('viziito_patient_details', JSON.stringify(detailsDict));
+      localStorage.setItem('vizito_patient_details', JSON.stringify(detailsDict));
     }
 
     setPatient(loadedDetail);
 
     // Load local appointments or generate mock list
-    const apptKey = `viziito_appts_${activeId}`;
+    const apptKey = `vizito_appts_${activeId}`;
     const savedAppts = localStorage.getItem(apptKey);
     if (savedAppts) {
-      try { setAppointments(JSON.parse(savedAppts)); } catch (err) {}
+      try { setAppointments(JSON.parse(savedAppts)); } catch (err) { }
     } else {
       const mockAppts: Appointment[] = [
         { id: 'APT-98210', date: '28 May 2025', time: '11:30 AM - 12:00 PM', type: 'In-Clinic Consultation', doctor: 'Dr. Arjun Reddy', status: 'Completed', reason: 'Chest pain and breathlessness' },
@@ -282,7 +283,7 @@ export default function PatientDetailScreen() {
     }
 
     // Load prescriptions for this patient
-    const savedGlobalRx = localStorage.getItem('viziito_prescriptions');
+    const savedGlobalRx = localStorage.getItem('vizito_prescriptions');
     let matchingRx: PrescriptionItem[] = [];
     if (savedGlobalRx) {
       try {
@@ -296,7 +297,7 @@ export default function PatientDetailScreen() {
             medications: r.medications ? r.medications.map((m: any) => m.name) : ['Paracetamol 650mg'],
             status: r.status
           }));
-      } catch (err) {}
+      } catch (err) { }
     }
 
     if (matchingRx.length === 0) {
@@ -362,17 +363,17 @@ export default function PatientDetailScreen() {
     setPatient(updatedPatient);
 
     // Save back to details list in localStorage
-    const savedDetails = localStorage.getItem('viziito_patient_details');
+    const savedDetails = localStorage.getItem('vizito_patient_details');
     if (savedDetails) {
       try {
         const detailsDict = JSON.parse(savedDetails);
         detailsDict[activeId] = updatedPatient;
-        localStorage.setItem('viziito_patient_details', JSON.stringify(detailsDict));
-      } catch (err) {}
+        localStorage.setItem('vizito_patient_details', JSON.stringify(detailsDict));
+      } catch (err) { }
     }
 
     // Sync back basic list in localStorage
-    const savedBasic = localStorage.getItem('viziito_patients');
+    const savedBasic = localStorage.getItem('vizito_patients');
     if (savedBasic) {
       try {
         const basicList = JSON.parse(savedBasic);
@@ -389,8 +390,8 @@ export default function PatientDetailScreen() {
           }
           return p;
         });
-        localStorage.setItem('viziito_patients', JSON.stringify(updatedBasic));
-      } catch (err) {}
+        localStorage.setItem('vizito_patients', JSON.stringify(updatedBasic));
+      } catch (err) { }
     }
 
     setIsEditModalOpen(false);
@@ -417,7 +418,7 @@ export default function PatientDetailScreen() {
 
     const updated = [newAppt, ...appointments];
     setAppointments(updated);
-    localStorage.setItem(`viziito_appts_${activeId}`, JSON.stringify(updated));
+    localStorage.setItem(`vizito_appts_${activeId}`, JSON.stringify(updated));
 
     // Update stats
     if (patient) {
@@ -426,13 +427,13 @@ export default function PatientDetailScreen() {
         totalAppointments: patient.totalAppointments + 1
       };
       setPatient(updatedPat);
-      const savedDetails = localStorage.getItem('viziito_patient_details');
+      const savedDetails = localStorage.getItem('vizito_patient_details');
       if (savedDetails) {
         try {
           const dict = JSON.parse(savedDetails);
           dict[activeId] = updatedPat;
-          localStorage.setItem('viziito_patient_details', JSON.stringify(dict));
-        } catch (err) {}
+          localStorage.setItem('vizito_patient_details', JSON.stringify(dict));
+        } catch (err) { }
       }
     }
 
@@ -444,13 +445,13 @@ export default function PatientDetailScreen() {
   // View prescription in modal Rx pad
   const openViewRx = (rxId: string) => {
     // Try finding details in global prescriptions
-    const savedGlobalRx = localStorage.getItem('viziito_prescriptions');
+    const savedGlobalRx = localStorage.getItem('vizito_prescriptions');
     let rxRecord: any = null;
     if (savedGlobalRx) {
       try {
         const list = JSON.parse(savedGlobalRx);
         rxRecord = list.find((r: any) => r.id === rxId);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (!rxRecord) {
@@ -461,7 +462,7 @@ export default function PatientDetailScreen() {
       ] : [
         { name: 'Telmisartan 40mg', dosage: '40mg', frequency: 'Once daily after food', duration: 'Continuous' }
       ];
-      
+
       rxRecord = {
         id: rxId,
         patient: patient?.name,
@@ -474,7 +475,7 @@ export default function PatientDetailScreen() {
         medications: meds
       };
     }
-    
+
     setSelectedRx(rxRecord);
     setIsViewRxModalOpen(true);
   };
@@ -516,11 +517,11 @@ export default function PatientDetailScreen() {
     };
     setPrescriptions(prev => [newRxItem, ...prev]);
 
-    // 2. Save to global viziito_prescriptions in localStorage
-    const savedGlobal = localStorage.getItem('viziito_prescriptions');
+    // 2. Save to global vizito_prescriptions in localStorage
+    const savedGlobal = localStorage.getItem('vizito_prescriptions');
     let allRxList: any[] = [];
     if (savedGlobal) {
-      try { allRxList = JSON.parse(savedGlobal); } catch(err){}
+      try { allRxList = JSON.parse(savedGlobal); } catch (err) { }
     }
     const fullRxRecord = {
       id: rxId,
@@ -536,7 +537,7 @@ export default function PatientDetailScreen() {
       medications: rxMeds.length > 0 ? rxMeds : [{ name: 'Standard Antibiotics', dosage: '500mg', frequency: 'Once daily', duration: '5 Days' }]
     };
     allRxList.unshift(fullRxRecord);
-    localStorage.setItem('viziito_prescriptions', JSON.stringify(allRxList));
+    localStorage.setItem('vizito_prescriptions', JSON.stringify(allRxList));
 
     // 3. Update patient counts
     if (patient) {
@@ -545,13 +546,13 @@ export default function PatientDetailScreen() {
         totalPrescriptions: patient.totalPrescriptions + 1
       };
       setPatient(updatedPat);
-      const savedDetails = localStorage.getItem('viziito_patient_details');
+      const savedDetails = localStorage.getItem('vizito_patient_details');
       if (savedDetails) {
         try {
           const dict = JSON.parse(savedDetails);
           dict[activeId] = updatedPat;
-          localStorage.setItem('viziito_patient_details', JSON.stringify(dict));
-        } catch (err) {}
+          localStorage.setItem('vizito_patient_details', JSON.stringify(dict));
+        } catch (err) { }
       }
     }
 
@@ -578,7 +579,7 @@ export default function PatientDetailScreen() {
 
   return (
     <div className="space-y-5 pb-10">
-      
+
       {/* ─── Toast Alerts ──────────────────────────────────────────────────── */}
       {toast && (
         <div className="fixed bottom-5 right-5 z-50 animate-fade flex items-center gap-3 bg-slate-900 border border-slate-800 text-white px-5 py-3.5 rounded-2xl shadow-xl max-w-sm">
@@ -603,7 +604,7 @@ export default function PatientDetailScreen() {
           Back to Patients List
         </button>
         <div className="flex items-center gap-2">
-          <button 
+          <button
             onClick={handleOpenEdit}
             className="flex items-center gap-2 bg-teal-700 hover:bg-teal-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer"
           >
@@ -678,11 +679,10 @@ export default function PatientDetailScreen() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-3.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
-                activeTab === tab
+              className={`px-4 py-3.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-all cursor-pointer ${activeTab === tab
                   ? 'border-teal-600 text-teal-700'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -795,11 +795,10 @@ export default function PatientDetailScreen() {
                       <Calendar className="w-4 h-4 text-teal-600" />
                       <span className="text-sm font-bold text-slate-800">{appointments[0].date}</span>
                     </div>
-                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg ${
-                      appointments[0].status === 'Upcoming'
+                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg ${appointments[0].status === 'Upcoming'
                         ? 'bg-amber-50 text-amber-700'
                         : 'bg-teal-50 text-teal-700'
-                    }`}>
+                      }`}>
                       {appointments[0].status}
                     </span>
                   </div>
@@ -857,7 +856,7 @@ export default function PatientDetailScreen() {
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 animate-fade">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="text-sm font-bold text-slate-800">Appointment History</h3>
-            <button 
+            <button
               onClick={() => setIsApptModalOpen(true)}
               className="btn btn-primary py-2 px-4 text-xs flex items-center gap-1 cursor-pointer shadow-sm shadow-teal-500/20"
             >
@@ -889,11 +888,10 @@ export default function PatientDetailScreen() {
                     <td className="py-3.5 text-slate-600">{appt.doctor}</td>
                     <td className="py-3.5 max-w-[200px] truncate" title={appt.reason}>{appt.reason}</td>
                     <td className="py-3.5">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        appt.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                        appt.status === 'Upcoming' ? 'bg-amber-50 text-amber-700' :
-                        'bg-rose-50 text-rose-700'
-                      }`}>
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${appt.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                          appt.status === 'Upcoming' ? 'bg-amber-50 text-amber-700' :
+                            'bg-rose-50 text-rose-700'
+                        }`}>
                         {appt.status}
                       </span>
                     </td>
@@ -910,7 +908,7 @@ export default function PatientDetailScreen() {
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 animate-fade">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="text-sm font-bold text-slate-800">Issued Prescriptions</h3>
-            <button 
+            <button
               onClick={() => setIsCreateRxModalOpen(true)}
               className="btn btn-primary py-2 px-4 text-xs flex items-center gap-1 cursor-pointer"
             >
@@ -935,7 +933,7 @@ export default function PatientDetailScreen() {
                       Meds: {rx.medications.join(', ')}
                     </p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => openViewRx(rx.id)}
                     className="btn btn-secondary py-1.5 px-3 text-xs flex items-center gap-1 bg-white hover:bg-slate-50 cursor-pointer shadow-xs border-slate-200 shrink-0"
                   >
@@ -990,8 +988,8 @@ export default function PatientDetailScreen() {
           <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">Diagnostic Reports</h3>
           <div className="divide-y divide-slate-100">
             {[
-              { name: 'Lipid Profile (Cholesterol Panel)', date: '25 May 2025', size: '2.4 MB', lab: 'Viziito Diagnostic Lab' },
-              { name: 'Complete Blood Count (CBC) Panel', date: '10 May 2025', size: '1.8 MB', lab: 'Viziito Diagnostic Lab' },
+              { name: 'Lipid Profile (Cholesterol Panel)', date: '25 May 2025', size: '2.4 MB', lab: 'vizito Diagnostic Lab' },
+              { name: 'Complete Blood Count (CBC) Panel', date: '10 May 2025', size: '1.8 MB', lab: 'vizito Diagnostic Lab' },
               { name: 'HbA1c & Fasting Blood Sugar Report', date: '12 Apr 2025', size: '1.2 MB', lab: 'City Labs Inc' },
               { name: 'Electrocardiogram (ECG) Report', date: '12 Apr 2025', size: '4.5 MB', lab: 'Banjara Hills Cardiac Center' }
             ].map((report, idx) => (
@@ -1000,7 +998,7 @@ export default function PatientDetailScreen() {
                   <p className="text-xs font-bold text-slate-800">{report.name}</p>
                   <p className="text-[11px] text-slate-400 mt-0.5">{report.date} · {report.size} · Lab: {report.lab}</p>
                 </div>
-                <button 
+                <button
                   onClick={() => handleDownloadReport(report.name)}
                   className="btn btn-secondary py-1.5 px-3 text-xs flex items-center gap-1.5 bg-white hover:bg-slate-50 cursor-pointer shadow-xs border-slate-200 shrink-0"
                 >
@@ -1016,18 +1014,18 @@ export default function PatientDetailScreen() {
 
       {/* EDIT PROFILE MODAL */}
       {isEditModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={() => setIsEditModalOpen(false)}
         >
-          <div 
-            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto animate-fade"
+          <div
+            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto modal-scrollbar animate-fade"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
               <h3 className="text-lg font-bold text-slate-800">Edit Patient Profile</h3>
-              <button 
-                onClick={() => setIsEditModalOpen(false)} 
+              <button
+                onClick={() => setIsEditModalOpen(false)}
                 className="p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 rounded-lg transition-all cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -1204,11 +1202,11 @@ export default function PatientDetailScreen() {
 
       {/* BOOK APPOINTMENT MODAL */}
       {isApptModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
           onClick={() => setIsApptModalOpen(false)}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade"
             onClick={e => e.stopPropagation()}
           >
@@ -1268,14 +1266,14 @@ export default function PatientDetailScreen() {
               </div>
 
               <div className="flex justify-end gap-3 border-t border-slate-100 pt-3">
-                <button 
-                  type="button" 
-                  onClick={() => setIsApptModalOpen(false)} 
+                <button
+                  type="button"
+                  onClick={() => setIsApptModalOpen(false)}
                   className="btn btn-secondary text-xs cursor-pointer py-2 px-4"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="btn btn-primary text-xs cursor-pointer py-2 px-4"
                 >
@@ -1289,12 +1287,12 @@ export default function PatientDetailScreen() {
 
       {/* CREATE PRESCRIPTION MODAL */}
       {isCreateRxModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={() => setIsCreateRxModalOpen(false)}
         >
-          <div 
-            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto animate-fade"
+          <div
+            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto modal-scrollbar animate-fade"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -1329,8 +1327,8 @@ export default function PatientDetailScreen() {
                       <div key={index} className="px-4 py-2 flex items-center justify-between text-xs font-semibold text-slate-700">
                         <span className="font-bold text-slate-900">{med.name} ({med.dosage})</span>
                         <span className="text-slate-400">{med.frequency} · {med.duration}</span>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => setRxMeds(prev => prev.filter((_, idx) => idx !== index))}
                           className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer"
                         >
@@ -1346,49 +1344,49 @@ export default function PatientDetailScreen() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
                   <div className="sm:col-span-3">
                     <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Drug Name</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="e.g. Telmisartan 40mg"
-                      value={newMedName} 
-                      onChange={e => setNewMedName(e.target.value)} 
+                      value={newMedName}
+                      onChange={e => setNewMedName(e.target.value)}
                       className="form-control py-2 text-xs"
                     />
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Dosage</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. 40mg" 
-                      value={newMedDosage} 
-                      onChange={e => setNewMedDosage(e.target.value)} 
+                    <input
+                      type="text"
+                      placeholder="e.g. 40mg"
+                      value={newMedDosage}
+                      onChange={e => setNewMedDosage(e.target.value)}
                       className="form-control py-2 text-xs"
                     />
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Frequency</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. Once daily" 
-                      value={newMedFreq} 
-                      onChange={e => setNewMedFreq(e.target.value)} 
+                    <input
+                      type="text"
+                      placeholder="e.g. Once daily"
+                      value={newMedFreq}
+                      onChange={e => setNewMedFreq(e.target.value)}
                       className="form-control py-2 text-xs"
                     />
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Duration</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. 30 Days" 
-                      value={newMedDur} 
-                      onChange={e => setNewMedDur(e.target.value)} 
+                    <input
+                      type="text"
+                      placeholder="e.g. 30 Days"
+                      value={newMedDur}
+                      onChange={e => setNewMedDur(e.target.value)}
                       className="form-control py-2 text-xs"
                     />
                   </div>
                 </div>
 
                 <div className="flex justify-end mt-3">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={addRxMed}
                     className="btn btn-secondary text-xs py-1.5 px-3 flex items-center gap-1 bg-white cursor-pointer"
                   >
@@ -1398,15 +1396,15 @@ export default function PatientDetailScreen() {
               </div>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
-                <button 
-                  type="button" 
-                  onClick={() => setIsCreateRxModalOpen(false)} 
+                <button
+                  type="button"
+                  onClick={() => setIsCreateRxModalOpen(false)}
                   className="btn btn-secondary text-sm cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn btn-primary text-sm cursor-pointer"
                 >
                   Save & Issue
@@ -1418,26 +1416,26 @@ export default function PatientDetailScreen() {
       )}
 
       {/* RX PAD MODAL */}
-      {isViewRxModalOpen && selectedRx && (
-        <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+      {isViewRxModalOpen && selectedRx && createPortal(
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 print:bg-transparent print:backdrop-blur-none print:p-0 print:relative print:block print:z-0"
           onClick={() => setIsViewRxModalOpen(false)}
         >
-          <div 
-            className="bg-white rounded-2xl max-w-2xl w-full p-0 shadow-2xl border border-slate-150 overflow-hidden animate-fade"
+          <div
+            className="bg-white rounded-2xl max-w-2xl w-full p-0 shadow-2xl border border-slate-150 overflow-hidden animate-fade print:max-w-full print:border-none print:shadow-none print:rounded-none print:m-0 print:p-0"
             onClick={e => e.stopPropagation()}
           >
             {/* Header controls */}
-            <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+            <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center justify-between print:hidden">
               <span className="text-xs font-bold text-slate-600">Prescription View: {selectedRx.id}</span>
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => window.print()}
                   className="btn btn-secondary py-1 px-3 text-xs flex items-center gap-1.5 shadow-sm border border-slate-200 cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5" /> Print
                 </button>
-                <button 
+                <button
                   onClick={() => setIsViewRxModalOpen(false)}
                   className="p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-lg cursor-pointer"
                 >
@@ -1447,8 +1445,8 @@ export default function PatientDetailScreen() {
             </div>
 
             {/* The Rx Pad */}
-            <div className="p-8 bg-white text-slate-800" id="rx-pad-print-area">
-              
+            <div className="p-8 bg-white text-slate-800 print:p-6 print:pt-12" id="rx-pad-print-area">
+
               {/* Doctor details */}
               <div className="flex justify-between items-start border-b-2 border-slate-200 pb-4 mb-6">
                 <div>
@@ -1457,7 +1455,7 @@ export default function PatientDetailScreen() {
                   <p className="text-[10px] text-slate-400">Reg. No: AP-2015-88329</p>
                 </div>
                 <div className="text-right">
-                  <h3 className="text-xs font-extrabold text-slate-700">VIZIITO CLINIC CENTER</h3>
+                  <h3 className="text-xs font-extrabold text-slate-700">vizito CLINIC CENTER</h3>
                   <p className="text-[10px] text-slate-400 mt-0.5">H.No 12-3-45, Banjara Hills Rd 2</p>
                   <p className="text-[10px] text-slate-400">Hyderabad, TS - 500034</p>
                   <p className="text-[10px] text-slate-400">Ph: +91 40 2234 5678</p>
@@ -1540,7 +1538,8 @@ export default function PatientDetailScreen() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

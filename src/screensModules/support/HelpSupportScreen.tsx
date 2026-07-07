@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  LifeBuoy, 
-  Search, 
-  MessageCircle, 
-  Mail, 
-  Phone, 
-  ChevronDown, 
+import {
+  LifeBuoy,
+  Search,
+  MessageCircle,
+  Mail,
+  Phone,
+  ChevronDown,
   ChevronUp,
   FileText,
   Send
@@ -60,7 +60,7 @@ export default function HelpSupportScreen() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Left Column: FAQs & Search */}
         <div className="lg:col-span-2 space-y-6">
           {/* Search Bar */}
@@ -68,9 +68,9 @@ export default function HelpSupportScreen() {
             <div className="pl-3">
               <Search className="w-5 h-5 text-slate-400" />
             </div>
-            <input 
-              type="text" 
-              placeholder="Search for answers, articles, or topics..." 
+            <input
+              type="text"
+              placeholder="Search for answers, articles, or topics..."
               className="w-full bg-transparent border-none focus:outline-none text-slate-700 py-2 placeholder:text-slate-400 font-medium"
             />
           </div>
@@ -86,7 +86,7 @@ export default function HelpSupportScreen() {
             <div className="divide-y divide-slate-100">
               {FAQS.map((faq, index) => (
                 <div key={index} className="group">
-                  <button 
+                  <button
                     onClick={() => setOpenFaq(openFaq === index ? null : index)}
                     className="w-full text-left px-6 py-5 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer"
                   >
@@ -112,15 +112,15 @@ export default function HelpSupportScreen() {
 
         {/* Right Column: Contact & Ticket */}
         <div className="space-y-6">
-          
+
           {/* Quick Contact Cards */}
           <div className="bg-gradient-to-br from-teal-600 to-violet-700 rounded-2xl p-6 text-white shadow-lg shadow-teal-600/20 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-10">
               <MessageCircle className="w-32 h-32" />
             </div>
-            
+
             <h2 className="text-lg font-bold mb-4 relative z-10">Need Immediate Help?</h2>
-            
+
             <div className="space-y-4 relative z-10">
               <div className="flex items-start gap-4 p-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-colors cursor-pointer">
                 <div className="p-2 bg-white/20 rounded-lg shrink-0">
@@ -131,14 +131,14 @@ export default function HelpSupportScreen() {
                   <p className="font-bold">1800-VIZITO-PRO</p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-4 p-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-colors cursor-pointer">
                 <div className="p-2 bg-white/20 rounded-lg shrink-0">
                   <Mail className="w-5 h-5" />
                 </div>
                 <div>
                   <p className="text-xs text-teal-100 font-semibold uppercase tracking-wider">Email Us</p>
-                  <p className="font-bold">support@viziito.com</p>
+                  <p className="font-bold">support@vizito.com</p>
                 </div>
               </div>
             </div>
@@ -147,7 +147,7 @@ export default function HelpSupportScreen() {
           {/* Submit a Ticket */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6">
             <h2 className="text-lg font-bold text-slate-800 mb-4">Submit a Ticket</h2>
-            
+
             {ticketSent ? (
               <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl text-center">
                 <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -160,8 +160,8 @@ export default function HelpSupportScreen() {
               <form onSubmit={handleTicketSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Subject</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     required
                     value={ticketSubject}
                     onChange={(e) => setTicketSubject(e.target.value)}
@@ -171,7 +171,7 @@ export default function HelpSupportScreen() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Message</label>
-                  <textarea 
+                  <textarea
                     required
                     rows={4}
                     value={ticketMessage}
@@ -186,7 +186,7 @@ export default function HelpSupportScreen() {
               </form>
             )}
           </div>
-          
+
         </div>
       </div>
     </div>

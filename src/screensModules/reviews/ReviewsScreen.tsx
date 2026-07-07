@@ -72,9 +72,60 @@ const MOCK_REVIEWS = [
     avatar: 'https://i.pravatar.cc/150?u=sandeep'
   }
 ];
-
 export default function ReviewsScreen() {
   const [activeTab, setActiveTab] = useState('all');
+  const [selectedLocation, setSelectedLocation] = useState('All');
+  const [selectedType, setSelectedType] = useState('All');
+  const [selectedRating, setSelectedRating] = useState('All');
+  const [selectedDateRange, setSelectedDateRange] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleResetFilters = () => {
+    setSelectedLocation('All');
+    setSelectedType('All');
+    setSelectedRating('All');
+    setSelectedDateRange('All');
+    setSearchQuery('');
+  };
+
+  const locations = Array.from(new Set(MOCK_REVIEWS.map(r => r.location)));
+  const types = Array.from(new Set(MOCK_REVIEWS.map(r => r.type)));
+
+  const dropdownFiltered = MOCK_REVIEWS.filter(review => {
+    if (selectedLocation !== 'All' && review.location !== selectedLocation) return false;
+    if (selectedType !== 'All' && review.type !== selectedType) return false;
+    if (selectedRating !== 'All') {
+      const rat = Math.floor(review.rating);
+      if (selectedRating === '5' && rat !== 5) return false;
+      if (selectedRating === '4' && rat !== 4) return false;
+      if (selectedRating === '3' && rat > 3) return false;
+    }
+    if (selectedDateRange !== 'All') {
+      const day = parseInt(review.date.split(' ')[0]);
+      if (selectedDateRange === 'current') {
+        if (day < 26) return false;
+      } else if (selectedDateRange === 'previous') {
+        if (day < 19 || day > 25) return false;
+      }
+    }
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      const matchPatient = review.patient.toLowerCase().includes(q);
+      const matchText = review.text.toLowerCase().includes(q);
+      if (!matchPatient && !matchText) return false;
+    }
+    return true;
+  });
+
+  const allCount = dropdownFiltered.length;
+  const respondedCount = dropdownFiltered.filter(r => r.status === 'Responded').length;
+  const pendingCount = dropdownFiltered.filter(r => r.status === 'Pending').length;
+
+  const filteredReviews = dropdownFiltered.filter(review => {
+    if (activeTab === 'responded' && review.status !== 'Responded') return false;
+    if (activeTab === 'pending' && review.status !== 'Pending') return false;
+    return true;
+  });
 
   return (
     <div className="w-full animate-fade space-y-6">
@@ -90,31 +141,66 @@ export default function ReviewsScreen() {
         <div className="flex flex-wrap items-center gap-4 flex-1">
           <div className="w-full sm:w-auto">
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Location</label>
-            <div className="relative border border-slate-200 rounded-xl bg-white flex items-center h-10 px-3 cursor-pointer hover:border-slate-300 min-w-[160px]">
-              <span className="text-sm font-bold text-slate-700 flex-1">All Locations</span>
-              <ChevronDown className="w-4 h-4 text-slate-400" />
+            <div className="relative">
+              <select 
+                value={selectedLocation}
+                onChange={e => setSelectedLocation(e.target.value)}
+                className="appearance-none w-full border border-slate-200 rounded-xl bg-white h-10 pl-3 pr-8 text-sm font-bold text-slate-700 cursor-pointer hover:border-slate-300 focus:outline-none min-w-[160px]"
+              >
+                <option value="All">All Locations</option>
+                {locations.map(loc => (
+                  <option key={loc} value={loc}>{loc}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
           </div>
           <div className="w-full sm:w-auto">
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Consultation Type</label>
-            <div className="relative border border-slate-200 rounded-xl bg-white flex items-center h-10 px-3 cursor-pointer hover:border-slate-300 min-w-[160px]">
-              <span className="text-sm font-bold text-slate-700 flex-1">All Types</span>
-              <ChevronDown className="w-4 h-4 text-slate-400" />
+            <div className="relative">
+              <select 
+                value={selectedType}
+                onChange={e => setSelectedType(e.target.value)}
+                className="appearance-none w-full border border-slate-200 rounded-xl bg-white h-10 pl-3 pr-8 text-sm font-bold text-slate-700 cursor-pointer hover:border-slate-300 focus:outline-none min-w-[160px]"
+              >
+                <option value="All">All Types</option>
+                {types.map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
           </div>
           <div className="w-full sm:w-auto">
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rating</label>
-            <div className="relative border border-slate-200 rounded-xl bg-white flex items-center h-10 px-3 cursor-pointer hover:border-slate-300 min-w-[140px]">
-              <span className="text-sm font-bold text-slate-700 flex-1">All Ratings</span>
-              <ChevronDown className="w-4 h-4 text-slate-400" />
+            <div className="relative">
+              <select 
+                value={selectedRating}
+                onChange={e => setSelectedRating(e.target.value)}
+                className="appearance-none w-full border border-slate-200 rounded-xl bg-white h-10 pl-3 pr-8 text-sm font-bold text-slate-700 cursor-pointer hover:border-slate-300 focus:outline-none min-w-[140px]"
+              >
+                <option value="All">All Ratings</option>
+                <option value="5">5 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="3">3 Stars & Below</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
           </div>
           <div className="w-full sm:w-auto">
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Date Range</label>
-            <div className="relative border border-slate-200 rounded-xl bg-white flex items-center h-10 px-3 cursor-pointer hover:border-slate-300 min-w-[200px]">
-              <CalendarClock className="w-4 h-4 text-slate-400 mr-2" />
-              <span className="text-sm font-bold text-slate-700 flex-1">26 May 2025 - 01 Jun 2025</span>
-              <ChevronDown className="w-4 h-4 text-slate-400" />
+            <div className="relative">
+              <select 
+                value={selectedDateRange}
+                onChange={e => setSelectedDateRange(e.target.value)}
+                className="appearance-none w-full border border-slate-200 rounded-xl bg-white h-10 pl-9 pr-8 text-sm font-bold text-slate-700 cursor-pointer hover:border-slate-300 focus:outline-none min-w-[220px]"
+              >
+                <option value="All">All Dates</option>
+                <option value="current">26 May 2025 - 01 Jun 2025</option>
+                <option value="previous">19 May 2025 - 25 May 2025</option>
+              </select>
+              <CalendarClock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
           </div>
         </div>
@@ -124,11 +210,21 @@ export default function ReviewsScreen() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               type="text" 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search reviews..." 
               className="w-full pl-9 pr-4 h-10 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-teal-400"
             />
           </div>
-          <button className="flex items-center justify-center gap-2 h-10 px-4 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+          <button 
+            onClick={handleResetFilters}
+            className={`flex items-center justify-center gap-2 h-10 px-4 border rounded-xl text-sm font-bold transition-colors cursor-pointer ${
+              (selectedLocation !== 'All' || selectedType !== 'All' || selectedRating !== 'All' || selectedDateRange !== 'All' || searchQuery !== '')
+                ? 'bg-teal-50 border-teal-200 text-teal-600 hover:bg-teal-100/70'
+                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
+            title="Clear all filters"
+          >
             <Filter className="w-4 h-4" /> Filters
           </button>
         </div>
@@ -219,7 +315,7 @@ export default function ReviewsScreen() {
                   activeTab === 'all' ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
-                All Reviews (248)
+                All Reviews ({allCount})
               </button>
               <button 
                 onClick={() => setActiveTab('responded')}
@@ -227,7 +323,7 @@ export default function ReviewsScreen() {
                   activeTab === 'responded' ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
-                Responded (186)
+                Responded ({respondedCount})
               </button>
               <button 
                 onClick={() => setActiveTab('pending')}
@@ -235,7 +331,7 @@ export default function ReviewsScreen() {
                   activeTab === 'pending' ? 'border-teal-600 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
-                Pending (62)
+                Pending ({pendingCount})
               </button>
             </div>
             <div className="relative pb-4 sm:pb-0 sm:mb-4">
@@ -248,7 +344,7 @@ export default function ReviewsScreen() {
 
           {/* Reviews List */}
           <div className="divide-y divide-slate-100 flex-1">
-            {MOCK_REVIEWS.map(review => {
+            {filteredReviews.map(review => {
               const TypeIcon = review.typeIcon;
               return (
                 <div key={review.id} className="p-6 flex flex-col sm:flex-row gap-4 sm:gap-6 hover:bg-slate-50/50 transition-colors">
@@ -313,11 +409,16 @@ export default function ReviewsScreen() {
                 </div>
               )
             })}
+            {filteredReviews.length === 0 && (
+              <div className="p-12 text-center text-sm font-semibold text-slate-400">
+                No reviews match the selected filters.
+              </div>
+            )}
           </div>
 
           {/* Pagination */}
           <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="text-xs font-bold text-slate-500">Showing 1 to 5 of 248 reviews</span>
+            <span className="text-xs font-bold text-slate-500">Showing 1 to {filteredReviews.length} of {filteredReviews.length} reviews</span>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1">
                 <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50"><ChevronLeft className="w-4 h-4" /></button>

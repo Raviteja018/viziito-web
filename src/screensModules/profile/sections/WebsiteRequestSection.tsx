@@ -24,10 +24,10 @@ const WebsiteRequestSection = () => {
             <h3 className="text-xl font-bold text-white">Personal Webpage Request</h3>
           </div>
           <p className="text-teal-200 text-sm mb-6 leading-relaxed">
-            Get a beautifully designed, SEO-optimized personal webpage within the Viziito ecosystem. 
+            Get a beautifully designed, SEO-optimized personal webpage within the vizito ecosystem.
             Allow patients to discover your profile, read reviews, and book appointments directly.
           </p>
-          
+
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 bg-teal-400 rounded-full" />
@@ -51,26 +51,26 @@ const WebsiteRequestSection = () => {
                 <label className="block text-xs font-bold text-teal-200 uppercase tracking-wider mb-1">Preferred URL Name</label>
                 <div className="flex items-center">
                   <span className="bg-teal-900/50 text-teal-300 px-3 py-2.5 text-sm rounded-l-xl border border-r-0 border-white/10">vizito.com/doctors/</span>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={urlName}
                     onChange={(e) => setUrlName(e.target.value)}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-r-xl px-3 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-teal-400/50 transition-all placeholder-teal-300/50" 
-                    placeholder="your-name" 
+                    className="flex-1 bg-white/5 border border-white/10 rounded-r-xl px-3 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-teal-400/50 transition-all placeholder-teal-300/50"
+                    placeholder="your-name"
                   />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-bold text-teal-200 uppercase tracking-wider mb-1">Additional Notes</label>
-                <textarea 
-                  rows={2} 
+                <textarea
+                  rows={2}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-teal-400/50 transition-all resize-none placeholder-teal-300/50" 
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-teal-400/50 transition-all resize-none placeholder-teal-300/50"
                   placeholder="Any specific requests for your webpage..."
                 />
               </div>
-              <button 
+              <button
                 onClick={handleRequest}
                 className="w-full bg-white hover:bg-teal-50 text-teal-900 px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-colors mt-2"
               >

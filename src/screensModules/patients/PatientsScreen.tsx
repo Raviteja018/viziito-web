@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Search,
   Plus,
@@ -1051,13 +1052,12 @@ export default function PatientsScreen() {
       {/* ─── MODALS ────────────────────────────────────────────────────────── */}
 
       {/* ADD / EDIT PATIENT MODAL */}
-      {(isAddModalOpen || isEditModalOpen) && (
-        <div
+      {(isAddModalOpen || isEditModalOpen) && createPortal( <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}
         >
           <div
-            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto animate-fade"
+            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto modal-scrollbar animate-fade"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -1259,11 +1259,12 @@ export default function PatientsScreen() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* DELETE CONFIRMATION MODAL */}
-      {isDeleteConfirmOpen && (
+      {isDeleteConfirmOpen && createPortal(
         <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
           onClick={() => setIsDeleteConfirmOpen(false)}
@@ -1294,11 +1295,12 @@ export default function PatientsScreen() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* IMPORT PATIENTS MODAL */}
-      {isImportModalOpen && (
+      {isImportModalOpen && createPortal(
         <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
           onClick={() => setIsImportModalOpen(false)}
@@ -1378,11 +1380,12 @@ export default function PatientsScreen() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* PATIENT COMMUNICATION MODAL */}
-      {isMessageModalOpen && (
+      {isMessageModalOpen && createPortal(
         <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
           onClick={() => setIsMessageModalOpen(false)}
@@ -1454,7 +1457,8 @@ export default function PatientsScreen() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

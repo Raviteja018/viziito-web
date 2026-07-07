@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Calendar, Clock, Ban, SlidersHorizontal, Download, 
   Building2, Monitor, Home, Eye, Edit2, ToggleRight, ToggleLeft, CalendarDays,
@@ -154,6 +155,126 @@ export default function AvailabilityScreen() {
   const [exemptionReason, setExemptionReason] = useState('');
 
   const [activeRowMenuId, setActiveRowMenuId] = useState<number | null>(null);
+  const [selectedAvForSlots, setSelectedAvForSlots] = useState<any>(MOCK_AVAILABILITY[0]);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [viewDetailsTargetAv, setViewDetailsTargetAv] = useState<any | null>(null);
+  const [selectedLocationFilter, setSelectedLocationFilter] = useState<string>('All');
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('All');
+
+  const handleResetFilters = () => {
+    if (selectedLocationFilter === 'All' && selectedTypeFilter === 'All') {
+      showToast('Filters are already cleared.', 'info');
+    } else {
+      setSelectedLocationFilter('All');
+      setSelectedTypeFilter('All');
+      showToast('Filters reset successfully!', 'success');
+    }
+  };
+
+  const handleDownloadCSV = () => {
+    if (availabilities.length === 0) {
+      showToast('No availability data to export.', 'info');
+      return;
+    }
+    
+    // Create CSV content
+    const headers = ['Location', 'Sub Location', 'Consultation Type', 'Available Days', 'Time Slots', 'Duration', 'Date Range', 'Status'];
+    const rows = availabilities.map(av => [
+      `"${av.location}"`,
+      `"${av.subLocation || ''}"`,
+      `"${av.type}"`,
+      `"${av.days}"`,
+      `"${av.time}"`,
+      `"${av.duration || '15 mins'}"`,
+      `"${av.dateRange}"`,
+      `"${av.status}"`
+    ]);
+    
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `availability_export_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast('Exported availability schedule as CSV!', 'success');
+  };
+
+  // Unique lists for filters
+  const uniqueLocations = Array.from(new Set(availabilities.map(av => av.location)));
+  const uniqueTypes = Array.from(new Set(availabilities.map(av => av.type)));
+
+  const filteredAvailabilities = availabilities.filter(av => {
+    const matchesLocation = selectedLocationFilter === 'All' || av.location === selectedLocationFilter;
+    const matchesType = selectedTypeFilter === 'All' || av.type === selectedTypeFilter;
+    return matchesLocation && matchesType;
+  });
+
+  const handleEditAvailability = (av: any) => {
+    setEditingId(av.id);
+    setLocationType(av.subLocation === 'Hospital' || av.location.toLowerCase().includes('hospital') ? 'Hospital' : 'Clinic');
+    setHospitalClinic(av.location);
+    setConsultationType(av.type);
+    setModeOfConsultation(av.type.toLowerCase().includes('video') ? 'Online/Video' : 'In-Person');
+    
+    if (av.days) {
+      setSelectedDays(av.days.split(', '));
+    }
+    if (av.dateRange) {
+      const dates = av.dateRange.split(' - ');
+      setStartDate(dates[0] || '20 May 2025');
+      setEndDate(dates[1] || '20 Aug 2025');
+    }
+    setSlotDuration(av.duration || '15 mins');
+    setStatus(av.status || 'Active');
+    
+    if (av.time) {
+      const slotsList = av.time.split(', ').map((t: string) => {
+        const parts = t.split(' - ');
+        return {
+          start: parts[0] || '09:00 AM',
+          end: parts[1] || '01:00 PM'
+        };
+      });
+      setCommonSlots(slotsList);
+      setApplySameToAll(true);
+    }
+    
+    setIsAdding(true);
+    setCurrentStep(1);
+  };
+
+  const handleDeleteAvailability = (id: number) => {
+    if (window.confirm("Are you sure you want to delete this availability schedule?")) {
+      const filtered = availabilities.filter(av => av.id !== id);
+      setAvailabilities(filtered);
+      if (selectedAvForSlots && selectedAvForSlots.id === id) {
+        setSelectedAvForSlots(filtered[0] || null);
+      }
+      showToast('Availability deleted successfully!', 'success');
+    }
+  };
+
+  const getSlotsForOverview = (av: any) => {
+    if (!av) return [];
+    const datePart = av.dateRange ? av.dateRange.split(' - ')[0] : '24 May 2025';
+    const times = av.time ? av.time.split(', ') : ['09:00 AM - 01:00 PM'];
+    const list: any[] = [];
+    let idCounter = 1;
+    times.forEach((t: string) => {
+      const parts = t.split(' - ');
+      const start = parts[0] || '09:00 AM';
+      const end = parts[1] || '10:00 AM';
+      list.push({ id: idCounter++, date: datePart, time: `${start} - ${start.replace('00', '15').replace('30', '45')}`, status: 'Available' });
+      list.push({ id: idCounter++, date: datePart, time: `${start.replace('00', '15').replace('30', '45')} - ${start.replace('00', '30').replace('30', '00')}`, status: 'Booked' });
+      list.push({ id: idCounter++, date: datePart, time: `${start.replace('00', '30').replace('30', '00')} - ${end}`, status: 'Blocked' });
+    });
+    return list.slice(0, 6);
+  };
 
   const showToast = (message: string, type: 'success' | 'info' = 'success') => {
     setToast({ message, type });
@@ -276,7 +397,7 @@ export default function AvailabilityScreen() {
     }
 
     const newAv = {
-      id: Date.now(),
+      id: editingId || Date.now(),
       location: locationType === 'Hospital' ? (hospitalClinic || 'Apollo Hospitals') : (hospitalClinic || 'My Clinic'),
       subLocation: locationType === 'Hospital' ? 'Hospital' : 'Clinic Chamber',
       locationIcon: locationType === 'Hospital' ? Building2 : Home,
@@ -287,14 +408,24 @@ export default function AvailabilityScreen() {
       time: timeStr,
       duration: slotDuration,
       dateRange: `${startDate} - ${endDate}`,
-      status: 'Active' // Confirmed as active immediately
+      status: status
     };
 
-    setAvailabilities([newAv, ...availabilities]);
-    
-    // Proceed immediately to Step 4 "Request Access" to finalize hospital request
-    setCurrentStep(4);
-    setIsRequestSubmitted(false);
+    if (editingId) {
+      const updated = availabilities.map(av => av.id === editingId ? newAv : av);
+      setAvailabilities(updated);
+      if (selectedAvForSlots && selectedAvForSlots.id === editingId) {
+        setSelectedAvForSlots(newAv);
+      }
+      showToast('Availability updated successfully!', 'success');
+      resetForm();
+    } else {
+      setAvailabilities([newAv, ...availabilities]);
+      showToast('Availability created successfully!', 'success');
+      // Proceed immediately to Step 4 "Request Access" to finalize hospital request
+      setCurrentStep(4);
+      setIsRequestSubmitted(false);
+    }
   };
 
   const handleSubmitAccessRequestToHospital = () => {
@@ -330,6 +461,7 @@ export default function AvailabilityScreen() {
     setCurrentStep(1);
     setIsRequestSubmitted(false);
     setRequestNotes('');
+    setEditingId(null);
   };
 
   return (
@@ -340,6 +472,139 @@ export default function AvailabilityScreen() {
           <div className="w-2 h-2 rounded-full shrink-0 bg-teal-500" />
           <p className="text-xs font-bold">{toast.message}</p>
         </div>
+      )}
+
+      {/* VIEW DETAILS MODAL */}
+      {viewDetailsTargetAv && createPortal(
+        (() => {
+          const LocIcon = viewDetailsTargetAv.locationIcon || Building2;
+          return (
+            <div 
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+              onClick={() => setViewDetailsTargetAv(null)}
+            >
+              <div 
+                className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto modal-scrollbar animate-fade text-left"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800">Availability Schedule Details</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Schedule ID: #{viewDetailsTargetAv.id}</p>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => setViewDetailsTargetAv(null)}
+                    className="p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-650 rounded-lg transition-all cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Core Information Card */}
+                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex gap-4 items-start">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${viewDetailsTargetAv.locationBg} ${viewDetailsTargetAv.locationColor}`}>
+                      <LocIcon className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-bold text-slate-800 leading-tight">{viewDetailsTargetAv.location}</h4>
+                      <p className="text-xs text-slate-500 font-semibold mt-0.5">{viewDetailsTargetAv.subLocation || 'Clinic Chamber'}</p>
+                      <span className={`inline-block text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md mt-2 ${
+                        viewDetailsTargetAv.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-orange-50 text-orange-600 border border-orange-100'
+                      }`}>
+                        {viewDetailsTargetAv.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Detail Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div className="p-3 bg-white border border-slate-150 rounded-xl">
+                      <span className="text-[10px] text-slate-450 font-bold uppercase block mb-1">Consultation Type</span>
+                      <span className="font-bold text-slate-700">{viewDetailsTargetAv.type}</span>
+                    </div>
+
+                    <div className="p-3 bg-white border border-slate-150 rounded-xl">
+                      <span className="text-[10px] text-slate-450 font-bold uppercase block mb-1">Date Range</span>
+                      <span className="font-bold text-slate-700">{viewDetailsTargetAv.dateRange}</span>
+                    </div>
+
+                    <div className="p-3 bg-white border border-slate-150 rounded-xl">
+                      <span className="text-[10px] text-slate-450 font-bold uppercase block mb-1">Available Days</span>
+                      <span className="font-bold text-slate-700 leading-relaxed">{viewDetailsTargetAv.days}</span>
+                    </div>
+
+                    <div className="p-3 bg-white border border-slate-150 rounded-xl">
+                      <span className="text-[10px] text-slate-450 font-bold uppercase block mb-1">Slot Duration</span>
+                      <span className="font-bold text-slate-700">{viewDetailsTargetAv.duration || '15 mins'}</span>
+                    </div>
+
+                    <div className="p-3 bg-white border border-slate-150 rounded-xl sm:col-span-2">
+                      <span className="text-[10px] text-slate-450 font-bold uppercase block mb-1">Schedule Time</span>
+                      <span className="font-bold text-slate-700">{viewDetailsTargetAv.time}</span>
+                    </div>
+                  </div>
+
+                  {/* Slots Preview Section */}
+                  <div className="space-y-2.5">
+                    <h4 className="text-xs font-bold text-slate-800">Generated Slots Preview</h4>
+                    <div className="overflow-hidden border border-slate-200 rounded-xl">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200">
+                            <th className="py-2.5 px-3 text-[10px] font-bold text-slate-500 uppercase">Date</th>
+                            <th className="py-2.5 px-3 text-[10px] font-bold text-slate-500 uppercase">Slot Time</th>
+                            <th className="py-2.5 px-3 text-[10px] font-bold text-slate-500 uppercase text-right">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs">
+                          {getSlotsForOverview(viewDetailsTargetAv).map((slot: any) => (
+                            <tr key={slot.id} className="hover:bg-slate-50/30 transition-colors">
+                              <td className="py-2.5 px-3 font-semibold text-slate-600">{slot.date}</td>
+                              <td className="py-2.5 px-3 font-semibold text-slate-600">{slot.time}</td>
+                              <td className="py-2.5 px-3 text-right">
+                                <span className={`text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-sm ${
+                                  slot.status === 'Available' ? 'bg-emerald-50 text-emerald-600' :
+                                  slot.status === 'Booked' ? 'bg-blue-50 text-blue-600' :
+                                  'bg-rose-50 text-rose-600'
+                                }`}>
+                                  {slot.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+                  <button 
+                    type="button" 
+                    onClick={() => setViewDetailsTargetAv(null)}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 px-5 rounded-xl cursor-pointer transition-colors"
+                  >
+                    Close
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const target = viewDetailsTargetAv;
+                      setViewDetailsTargetAv(null);
+                      handleEditAvailability(target);
+                    }}
+                    className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold py-2.5 px-5 rounded-xl cursor-pointer transition-colors shadow-sm flex items-center gap-1.5"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" /> Edit Schedule
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })(),
+        document.body
       )}
 
       {/* Hospital Request modal */}
@@ -580,24 +845,50 @@ export default function AvailabilityScreen() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="relative">
-                    <select className="appearance-none bg-white border border-slate-200 rounded-xl pl-3 pr-8 py-2 text-xs font-semibold text-slate-600 focus:outline-none shadow-sm cursor-pointer h-9">
-                      <option>All Locations</option>
+                    <select 
+                      value={selectedLocationFilter}
+                      onChange={e => setSelectedLocationFilter(e.target.value)}
+                      className="appearance-none bg-white border border-slate-200 rounded-xl pl-3 pr-8 py-2 text-xs font-semibold text-slate-600 focus:outline-none shadow-sm cursor-pointer h-9"
+                    >
+                      <option value="All">All Locations</option>
+                      {uniqueLocations.map(loc => (
+                        <option key={loc} value={loc}>{loc}</option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                   </div>
                   <div className="relative">
-                    <select className="appearance-none bg-white border border-slate-200 rounded-xl pl-3 pr-8 py-2 text-xs font-semibold text-slate-600 focus:outline-none shadow-sm cursor-pointer h-9">
-                      <option>All Consultation Types</option>
+                    <select 
+                      value={selectedTypeFilter}
+                      onChange={e => setSelectedTypeFilter(e.target.value)}
+                      className="appearance-none bg-white border border-slate-200 rounded-xl pl-3 pr-8 py-2 text-xs font-semibold text-slate-600 focus:outline-none shadow-sm cursor-pointer h-9"
+                    >
+                      <option value="All">All Consultation Types</option>
+                      {uniqueTypes.map(t => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
                 
                 <div className="flex gap-2">
-                  <button className="w-9 h-9 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer">
+                  <button 
+                    onClick={handleResetFilters}
+                    className={`w-9 h-9 flex items-center justify-center border rounded-xl transition-colors shadow-sm cursor-pointer ${
+                      (selectedLocationFilter !== 'All' || selectedTypeFilter !== 'All')
+                        ? 'bg-teal-50 border-teal-200 text-teal-600 hover:bg-teal-100/70'
+                        : 'bg-white border-slate-200 text-slate-400 hover:text-slate-650 hover:bg-slate-50'
+                    }`}
+                    title="Reset filters"
+                  >
                     <SlidersHorizontal className="w-4 h-4" />
                   </button>
-                  <button className="w-9 h-9 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer">
+                  <button 
+                    onClick={handleDownloadCSV}
+                    className="w-9 h-9 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-slate-650 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
+                    title="Export to CSV"
+                  >
                     <Download className="w-4 h-4" />
                   </button>
                 </div>
@@ -620,10 +911,10 @@ export default function AvailabilityScreen() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {availabilities.map(row => {
+                      {filteredAvailabilities.map(row => {
                         const LocIcon = row.locationIcon || Building2;
                         return (
-                          <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
+                          <tr key={row.id} className={`hover:bg-slate-50/50 transition-colors ${selectedAvForSlots?.id === row.id ? 'bg-teal-50/20' : ''}`}>
                             <td className="py-4 px-4">
                               <div className="flex items-center gap-3">
                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${row.locationBg} ${row.locationColor}`}>
@@ -660,7 +951,10 @@ export default function AvailabilityScreen() {
                             <td className="py-4 px-4 relative" onClick={e => e.stopPropagation()}>
                               <div className="flex items-center gap-2 text-slate-400">
                                 <button 
-                                  className="hover:text-teal-655 hover:bg-teal-50 p-1 rounded transition-colors cursor-pointer" 
+                                  onClick={() => {
+                                    setViewDetailsTargetAv(row);
+                                  }}
+                                  className="hover:text-teal-600 hover:bg-teal-50 p-1 rounded transition-colors cursor-pointer animate-fade" 
                                   title="View details"
                                 >
                                   <Eye className="w-4 h-4" />
@@ -680,9 +974,19 @@ export default function AvailabilityScreen() {
                                       <button
                                         onClick={() => {
                                           setActiveRowMenuId(null);
-                                          showToast(`Editing availability for ${row.location}`, 'info');
+                                          setViewDetailsTargetAv(row);
                                         }}
                                         className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
+                                      >
+                                        <Eye className="w-3.5 h-3.5 text-slate-400" /> View Details
+                                      </button>
+
+                                      <button
+                                        onClick={() => {
+                                          setActiveRowMenuId(null);
+                                          handleEditAvailability(row);
+                                        }}
+                                        className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors border-t border-slate-100 mt-1"
                                       >
                                         <Edit2 className="w-3.5 h-3.5 text-slate-400" /> Edit Availability
                                       </button>
@@ -721,11 +1025,12 @@ export default function AvailabilityScreen() {
                                       <button
                                         onClick={() => {
                                           setActiveRowMenuId(null);
-                                          showToast(`Viewing calendar days for ${row.location}`, 'info');
+                                          setSelectedAvForSlots(row);
+                                          showToast(`Showing slots for ${row.location}`, 'info');
                                         }}
                                         className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors border-t border-slate-100 mt-1"
                                       >
-                                        <CalendarDays className="w-3.5 h-3.5 text-teal-650" /> View Days
+                                        <CalendarDays className="w-3.5 h-3.5 text-teal-600" /> View Days
                                       </button>
                                     </div>
                                   </>
@@ -735,17 +1040,24 @@ export default function AvailabilityScreen() {
                           </tr>
                         );
                       })}
+                      {filteredAvailabilities.length === 0 && (
+                        <tr>
+                          <td colSpan={8} className="py-12 text-center text-xs font-semibold text-slate-400">
+                            No availabilities match the selected filters.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
                 
                 {/* Pagination */}
                 <div className="p-4 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500">Showing 1 to {availabilities.length} of {availabilities.length} records</span>
+                  <span className="text-xs font-bold text-slate-500">Showing 1 to {filteredAvailabilities.length} of {filteredAvailabilities.length} records</span>
                   <div className="flex items-center gap-1">
                     <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50"><ChevronLeft className="w-4 h-4" /></button>
                     <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-teal-50 text-teal-700 font-bold">1</button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-650 hover:bg-slate-50"><ChevronRight className="w-4 h-4" /></button>
+                    <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-655 hover:bg-slate-50"><ChevronRight className="w-4 h-4" /></button>
                   </div>
                 </div>
               </div>
@@ -755,7 +1067,9 @@ export default function AvailabilityScreen() {
             <div className="w-full space-y-6">
               <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
                 <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-800">Quick Slots Overview</h3>
+                  <h3 className="text-sm font-bold text-slate-800">
+                    Quick Slots: {selectedAvForSlots ? selectedAvForSlots.location : 'Overview'}
+                  </h3>
                 </div>
                 
                 <div className="p-5 space-y-4">
@@ -781,7 +1095,7 @@ export default function AvailabilityScreen() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {MOCK_SLOTS.map(slot => (
+                        {getSlotsForOverview(selectedAvForSlots).map((slot: any) => (
                           <tr key={slot.id} className="hover:bg-slate-50/50 transition-colors">
                             <td className="py-3 text-[11px] font-semibold text-slate-600">{slot.date}</td>
                             <td className="py-3 px-2 text-[11px] font-semibold text-slate-600 whitespace-nowrap">{slot.time}</td>
@@ -796,6 +1110,13 @@ export default function AvailabilityScreen() {
                             </td>
                           </tr>
                         ))}
+                        {getSlotsForOverview(selectedAvForSlots).length === 0 && (
+                          <tr>
+                            <td colSpan={3} className="py-6 text-center text-xs font-semibold text-slate-400">
+                              No slots configured for this availability.
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -815,9 +1136,11 @@ export default function AvailabilityScreen() {
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <div>
-              <h1 className="text-2xl font-black text-slate-800">Add Availability</h1>
-              <p className="text-sm font-medium text-slate-500 mt-1">Create your availability schedule and request to a hospital (if required).</p>
+             <div>
+              <h1 className="text-2xl font-black text-slate-800">{editingId ? 'Edit Availability' : 'Add Availability'}</h1>
+              <p className="text-sm font-medium text-slate-500 mt-1">
+                {editingId ? 'Update your availability schedule details.' : 'Create your availability schedule and request to a hospital (if required).'}
+              </p>
             </div>
           </div>
 
@@ -1377,7 +1700,11 @@ export default function AvailabilityScreen() {
                         onClick={handleSaveAvailability}
                         className="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 cursor-pointer transition-colors shadow-sm"
                       >
-                        Confirm &amp; Proceed to Request <ArrowRight className="w-4 h-4" />
+                        {editingId ? 'Save Changes' : (
+                          <>
+                            Confirm &amp; Proceed to Request <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>

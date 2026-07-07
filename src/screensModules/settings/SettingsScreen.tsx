@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { 
-  Settings as SettingsIcon, User, Lock, Bell, Globe, 
+import {
+  Settings as SettingsIcon, User, Lock, Bell, Globe,
   LogOut, ShieldCheck, Check, Eye, ChevronDown, CheckCircle2,
   Calendar, MessageSquare, FileText, CreditCard, Star, AlertCircle, AlertTriangle, Moon
 } from 'lucide-react';
@@ -27,7 +27,7 @@ const LANGUAGES: { id: Language; label: string; isDefault?: boolean; native?: st
 
 // Reusable Toggle Component
 const Toggle = ({ enabled, onChange }: { enabled: boolean; onChange: () => void }) => (
-  <button 
+  <button
     type="button"
     onClick={onChange}
     className={`w-11 h-6 rounded-full flex items-center transition-colors px-0.5 cursor-pointer ${enabled ? 'bg-teal-650' : 'bg-slate-300'}`}
@@ -38,12 +38,11 @@ const Toggle = ({ enabled, onChange }: { enabled: boolean; onChange: () => void 
 
 // Reusable Checkbox Component
 const Checkbox = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
-  <button 
+  <button
     type="button"
     onClick={onChange}
-    className={`w-5 h-5 rounded flex items-center justify-center border transition-colors cursor-pointer ${
-      checked ? 'bg-teal-650 border-teal-650' : 'bg-white border-slate-300 hover:border-teal-400'
-    }`}
+    className={`w-5 h-5 rounded flex items-center justify-center border transition-colors cursor-pointer ${checked ? 'bg-teal-650 border-teal-650' : 'bg-white border-slate-300 hover:border-teal-400'
+      }`}
   >
     {checked && <Check className="w-3.5 h-3.5 text-white" />}
   </button>
@@ -57,7 +56,7 @@ export default function SettingsScreen() {
     payments: true,
     system: true,
   });
-  
+
   const { language, setLanguage, t } = useLanguage();
   const [lang, setLang] = useState<Language>(language);
   const [twoFa, setTwoFa] = useState(true);
@@ -118,11 +117,10 @@ export default function SettingsScreen() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-                  isActive 
-                    ? 'bg-teal-50 text-teal-700' 
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${isActive
+                    ? 'bg-teal-50 text-teal-700'
                     : 'text-slate-600 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <Icon className={`w-5 h-5 ${isActive ? 'text-teal-600' : 'text-slate-400'}`} />
                 {tab.label}
@@ -133,7 +131,7 @@ export default function SettingsScreen() {
 
         {/* Right Content Area */}
         <div className="flex-1 w-full min-w-0">
-          
+
           {/* ──────────────────────────────────────────────────────────── */}
           {/* GENERAL TAB */}
           {/* ──────────────────────────────────────────────────────────── */}
@@ -146,7 +144,7 @@ export default function SettingsScreen() {
                     <h2 className="text-base font-bold text-slate-800">General Settings</h2>
                     <p className="text-sm text-slate-500 mt-0.5">Manage your basic application preferences.</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => showToast('General settings saved successfully!', 'success')}
                     className="bg-teal-700 hover:bg-teal-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer"
                   >
@@ -177,28 +175,28 @@ export default function SettingsScreen() {
                       <span className="text-sm font-bold text-slate-700">Appointment Updates</span>
                       <p className="text-xs text-slate-400 mt-0.5">Get notified when patients book or reschedule.</p>
                     </div>
-                    <Toggle enabled={genToggles.appointments} onChange={() => setGenToggles({...genToggles, appointments: !genToggles.appointments})} />
+                    <Toggle enabled={genToggles.appointments} onChange={() => setGenToggles({ ...genToggles, appointments: !genToggles.appointments })} />
                   </div>
                   <div className="flex items-center justify-between py-4">
                     <div>
                       <span className="text-sm font-bold text-slate-700">Patient Messages</span>
                       <p className="text-xs text-slate-400 mt-0.5">Alerts for new chat consults and messages.</p>
                     </div>
-                    <Toggle enabled={genToggles.messages} onChange={() => setGenToggles({...genToggles, messages: !genToggles.messages})} />
+                    <Toggle enabled={genToggles.messages} onChange={() => setGenToggles({ ...genToggles, messages: !genToggles.messages })} />
                   </div>
                   <div className="flex items-center justify-between py-4">
                     <div>
                       <span className="text-sm font-bold text-slate-700">Settlements &amp; Payments</span>
                       <p className="text-xs text-slate-400 mt-0.5">Get updates when payouts are processed.</p>
                     </div>
-                    <Toggle enabled={genToggles.payments} onChange={() => setGenToggles({...genToggles, payments: !genToggles.payments})} />
+                    <Toggle enabled={genToggles.payments} onChange={() => setGenToggles({ ...genToggles, payments: !genToggles.payments })} />
                   </div>
                   <div className="flex items-center justify-between py-4">
                     <div>
                       <span className="text-sm font-bold text-slate-700">System News</span>
                       <p className="text-xs text-slate-400 mt-0.5">Broadcast and version update notes.</p>
                     </div>
-                    <Toggle enabled={genToggles.system} onChange={() => setGenToggles({...genToggles, system: !genToggles.system})} />
+                    <Toggle enabled={genToggles.system} onChange={() => setGenToggles({ ...genToggles, system: !genToggles.system })} />
                   </div>
                 </div>
               </div>
@@ -227,7 +225,7 @@ export default function SettingsScreen() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-600 mb-1.5">Email Address *</label>
-                    <input type="email" defaultValue="dr.arjun@viziito.com" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-teal-400" />
+                    <input type="email" defaultValue="dr.arjun@vizito.com" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-teal-400" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-600 mb-1.5">Contact Number *</label>
@@ -242,13 +240,13 @@ export default function SettingsScreen() {
 
               {/* Action Buttons */}
               <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
-                <button 
+                <button
                   onClick={() => showToast('Profile updates cancelled.', 'info')}
                   className="px-6 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={() => showToast('Profile details updated successfully!', 'success')}
                   className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-sm font-bold transition-colors cursor-pointer"
                 >
@@ -263,7 +261,7 @@ export default function SettingsScreen() {
           {/* ──────────────────────────────────────────────────────────── */}
           {activeTab === 'security' && (
             <div className="bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 shadow-sm space-y-10 animate-fade">
-              
+
               {/* Header */}
               <div>
                 <h2 className="text-lg font-bold text-slate-800">Password &amp; Security</h2>
@@ -312,7 +310,7 @@ export default function SettingsScreen() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={() => showToast('Password updated successfully!', 'success')}
                   className="bg-teal-700 hover:bg-teal-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors mt-2 cursor-pointer animate-fade"
                 >
@@ -343,7 +341,7 @@ export default function SettingsScreen() {
                   }} />
                 </div>
                 <div className="flex justify-end">
-                  <button 
+                  <button
                     onClick={() => showToast('2FA Setup Wizard launched.', 'info')}
                     className="border border-teal-650 text-teal-700 hover:bg-teal-50 px-5 py-2 rounded-xl text-sm font-bold transition-colors cursor-pointer"
                   >
@@ -382,7 +380,7 @@ export default function SettingsScreen() {
                       { id: 'prescriptions', label: 'Prescriptions Alerts', desc: 'Notifications on generated medicine cards' },
                       { id: 'payments', label: 'Revenue & Payouts Updates', desc: 'When platform transfers complete' },
                       { id: 'reviews', label: 'Patient Reviews & Ratings', desc: 'New feedback postings from patients' },
-                      { id: 'system', label: 'Viziito Broadcasts', desc: 'Periodic platform feature reports' },
+                      { id: 'system', label: 'vizito Broadcasts', desc: 'Periodic platform feature reports' },
                       { id: 'alerts', label: 'Security & Auth Warnings', desc: 'Login alerts or credential adjustments' },
                     ].map(row => (
                       <tr key={row.id}>
@@ -420,7 +418,7 @@ export default function SettingsScreen() {
                   </div>
                   <Toggle enabled={quietHours} onChange={() => setQuietHours(!quietHours)} />
                 </div>
-                
+
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
                   <div className="flex items-center gap-3">
                     <div>
@@ -442,7 +440,7 @@ export default function SettingsScreen() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="bg-teal-50 border border-teal-100 rounded-xl p-4 flex items-start gap-3 flex-1">
                     <AlertCircle className="w-5 h-5 text-teal-600 shrink-0" />
                     <p className="text-xs font-medium text-teal-800 leading-relaxed">
@@ -479,11 +477,10 @@ export default function SettingsScreen() {
                         type="button"
                         key={l.id}
                         onClick={() => setLang(l.id)}
-                        className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer text-left ${
-                          isSelected 
-                            ? 'bg-emerald-50/50 border-emerald-350 shadow-xs' 
+                        className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer text-left ${isSelected
+                            ? 'bg-emerald-50/50 border-emerald-350 shadow-xs'
                             : 'bg-white border-slate-200 hover:border-slate-350'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-8 h-6 bg-slate-100 flex overflow-hidden rounded shadow-sm border border-slate-200/50 shrink-0">
@@ -501,11 +498,10 @@ export default function SettingsScreen() {
                             {l.native && <span className="text-[10px] text-slate-400 font-medium">{l.native}</span>}
                           </div>
                         </div>
-                        
+
                         {/* Radio indicator */}
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                          isSelected ? 'border-emerald-600' : 'border-slate-300'
-                        }`}>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'border-emerald-600' : 'border-slate-300'
+                          }`}>
                           {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-emerald-600" />}
                         </div>
                       </button>
@@ -519,7 +515,7 @@ export default function SettingsScreen() {
                   <AlertCircle className="w-4 h-4 text-blue-500" />
                   <p className="text-xs text-slate-650 font-medium">The language setting will be applied across the application.</p>
                 </div>
-                <button 
+                <button
                   type="button"
                   onClick={handleSaveLanguage}
                   className="bg-teal-700 hover:bg-teal-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-colors cursor-pointer shrink-0"

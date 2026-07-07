@@ -44,16 +44,16 @@ const ALL_APPOINTMENTS: Appointment[] = [
 // ─── Config ───────────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { bg: string; text: string }> = {
   Confirmed: { bg: 'bg-teal-50', text: 'text-teal-700' },
-  Upcoming:  { bg: 'bg-blue-50', text: 'text-blue-700' },
-  Pending:   { bg: 'bg-amber-50', text: 'text-amber-700' },
+  Upcoming: { bg: 'bg-blue-50', text: 'text-blue-700' },
+  Pending: { bg: 'bg-amber-50', text: 'text-amber-700' },
   Completed: { bg: 'bg-slate-100', text: 'text-slate-600' },
   Cancelled: { bg: 'bg-red-50', text: 'text-red-600' },
 };
 
 const PAYMENT_CONFIG: Record<string, { bg: string; text: string }> = {
-  Paid:    { bg: 'bg-teal-50', text: 'text-teal-700' },
+  Paid: { bg: 'bg-teal-50', text: 'text-teal-700' },
   Pending: { bg: 'bg-amber-50', text: 'text-amber-700' },
-  Waived:  { bg: 'bg-slate-100', text: 'text-slate-500' },
+  Waived: { bg: 'bg-slate-100', text: 'text-slate-500' },
 };
 
 const TYPE_TABS = ['All Appointments', 'Today', 'Upcoming', 'Completed', 'Cancelled'];
@@ -69,7 +69,7 @@ const TypeIcon = ({ type }: { type: string }) => {
 const StatCard = ({ icon: Icon, bg, iconColor, label, value, onClick }: {
   icon: React.ElementType; bg: string; iconColor: string; label: string; value: string | number; onClick?: () => void;
 }) => (
-  <div 
+  <div
     onClick={onClick}
     className={`bg-white border border-slate-200 rounded-2xl p-5 flex items-center gap-4 shadow-sm transition-all duration-205 ${onClick ? 'cursor-pointer hover:border-teal-500/40 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 select-none' : ''}`}
   >
@@ -99,14 +99,14 @@ export default function AppointmentsScreen() {
   const [selectedApp, setSelectedApp] = useState<Appointment | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage] = useState(10);
-  
+
   // Dropdown visibility states
   const [showClinicDropdown, setShowClinicDropdown] = useState(false);
   const [selectedClinic, setSelectedClinic] = useState('All Clinics');
-  
+
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [selectedType, setSelectedType] = useState('All Consultation Types');
-  
+
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [selectedDateFilter, setSelectedDateFilter] = useState('All Dates');
 
@@ -116,7 +116,7 @@ export default function AppointmentsScreen() {
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState('26 May 2025');
   const [rescheduleTime, setRescheduleTime] = useState('09:30 AM');
-  
+
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [isStartConsultationOpen, setIsStartConsultationOpen] = useState(false);
   const [consultationNotes, setConsultationNotes] = useState('');
@@ -131,7 +131,7 @@ export default function AppointmentsScreen() {
 
   // Load from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('viziito_appointments');
+    const saved = localStorage.getItem('vizito_appointments');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -145,7 +145,7 @@ export default function AppointmentsScreen() {
       }
     } else {
       setAppointments(ALL_APPOINTMENTS);
-      localStorage.setItem('viziito_appointments', JSON.stringify(ALL_APPOINTMENTS));
+      localStorage.setItem('vizito_appointments', JSON.stringify(ALL_APPOINTMENTS));
       setSelectedApp(ALL_APPOINTMENTS[0]);
     }
   }, []);
@@ -153,7 +153,7 @@ export default function AppointmentsScreen() {
   // Sync to local storage
   const syncAppointments = (updated: Appointment[]) => {
     setAppointments(updated);
-    localStorage.setItem('viziito_appointments', JSON.stringify(updated));
+    localStorage.setItem('vizito_appointments', JSON.stringify(updated));
   };
 
   // Close menus on document click
@@ -166,7 +166,7 @@ export default function AppointmentsScreen() {
   // Filter
   const filtered = appointments.filter(a => {
     // Tab filter
-    const matchTab = 
+    const matchTab =
       activeTab === 'All Appointments' ||
       (activeTab === 'Today' && a.date === '26 May 2025') ||
       (activeTab === 'Upcoming' && a.status === 'Upcoming') ||
@@ -174,20 +174,20 @@ export default function AppointmentsScreen() {
       (activeTab === 'Cancelled' && a.status === 'Cancelled');
 
     // Clinic filter
-    const matchClinic = 
-      selectedClinic === 'All Clinics' || 
-      a.location === selectedClinic || 
+    const matchClinic =
+      selectedClinic === 'All Clinics' ||
+      a.location === selectedClinic ||
       (selectedClinic === 'Banjara Hills Clinic' && a.location.includes('Banjara Hills')) ||
       (selectedClinic === 'Kukatpally Clinic' && a.location.includes('Kukatpally')) ||
       (selectedClinic === 'Secunderabad Clinic' && a.location.includes('Secunderabad'));
 
     // Type filter
-    const matchType = 
-      selectedType === 'All Consultation Types' || 
+    const matchType =
+      selectedType === 'All Consultation Types' ||
       a.type === selectedType;
 
     // Date filter
-    const matchDate = 
+    const matchDate =
       selectedDateFilter === 'All Dates' ||
       (selectedDateFilter === 'Today' && a.date === '26 May 2025') ||
       (selectedDateFilter === 'Tomorrow' && a.date === '27 May 2025');
@@ -253,36 +253,36 @@ export default function AppointmentsScreen() {
 
         {/* Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard 
-            icon={Calendar} 
-            bg="bg-teal-50" 
-            iconColor="text-teal-600" 
-            label="Today's Appointments" 
-            value={appointments.filter(a => a.date === '26 May 2025').length} 
+          <StatCard
+            icon={Calendar}
+            bg="bg-teal-50"
+            iconColor="text-teal-600"
+            label="Today's Appointments"
+            value={appointments.filter(a => a.date === '26 May 2025').length}
             onClick={() => setActiveTab('Today')}
           />
-          <StatCard 
-            icon={Clock} 
-            bg="bg-blue-50" 
-            iconColor="text-blue-600" 
-            label="Upcoming Appointments" 
-            value={appointments.filter(a => a.status === 'Upcoming').length} 
+          <StatCard
+            icon={Clock}
+            bg="bg-blue-50"
+            iconColor="text-blue-600"
+            label="Upcoming Appointments"
+            value={appointments.filter(a => a.status === 'Upcoming').length}
             onClick={() => setActiveTab('Upcoming')}
           />
-          <StatCard 
-            icon={CheckCircle2} 
-            bg="bg-amber-50" 
-            iconColor="text-amber-600" 
-            label="Completed Appointments" 
-            value={appointments.filter(a => a.status === 'Completed').length} 
+          <StatCard
+            icon={CheckCircle2}
+            bg="bg-amber-50"
+            iconColor="text-amber-600"
+            label="Completed Appointments"
+            value={appointments.filter(a => a.status === 'Completed').length}
             onClick={() => setActiveTab('Completed')}
           />
-          <StatCard 
-            icon={Ban} 
-            bg="bg-red-50" 
-            iconColor="text-red-500" 
-            label="Cancelled Appointments" 
-            value={appointments.filter(a => a.status === 'Cancelled').length} 
+          <StatCard
+            icon={Ban}
+            bg="bg-red-50"
+            iconColor="text-red-500"
+            label="Cancelled Appointments"
+            value={appointments.filter(a => a.status === 'Cancelled').length}
             onClick={() => setActiveTab('Cancelled')}
           />
         </div>
@@ -296,11 +296,10 @@ export default function AppointmentsScreen() {
                 <button
                   key={tab}
                   onClick={() => { setActiveTab(tab); setCurrentPage(1); setSelectedApp(null); }}
-                  className={`px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${
-                    activeTab === tab
+                  className={`px-4 py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-all ${activeTab === tab
                       ? 'border-teal-600 text-teal-700'
                       : 'border-transparent text-slate-500 hover:text-slate-700'
-                  }`}
+                    }`}
                 >
                   {tab}
                 </button>
@@ -311,7 +310,7 @@ export default function AppointmentsScreen() {
             <div className="flex items-center gap-2 pb-3 sm:pb-0">
               {/* Type filter */}
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setShowTypeDropdown(!showTypeDropdown)}
                   className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-100 whitespace-nowrap cursor-pointer"
                 >
@@ -324,8 +323,8 @@ export default function AppointmentsScreen() {
                     <div className="fixed inset-0 z-20" onClick={() => setShowTypeDropdown(false)} />
                     <div className="absolute right-0 top-full mt-1.5 w-48 bg-white border border-slate-200 shadow-xl rounded-xl py-1.5 z-30">
                       {['All Consultation Types', 'In-Clinic', 'Video Consultation', 'Home Visit'].map(t => (
-                        <button 
-                          key={t} 
+                        <button
+                          key={t}
                           onClick={() => { setSelectedType(t); setShowTypeDropdown(false); }}
                           className={`w-full text-left px-4 py-2 text-xs transition-colors cursor-pointer ${selectedType === t ? 'text-teal-700 bg-teal-50 font-semibold' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
@@ -339,7 +338,7 @@ export default function AppointmentsScreen() {
 
               {/* Date Range filter */}
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setShowDateDropdown(!showDateDropdown)}
                   className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-100 whitespace-nowrap cursor-pointer"
                 >
@@ -352,8 +351,8 @@ export default function AppointmentsScreen() {
                     <div className="fixed inset-0 z-20" onClick={() => setShowDateDropdown(false)} />
                     <div className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-slate-200 shadow-xl rounded-xl py-1.5 z-30">
                       {['All Dates', 'Today', 'Tomorrow'].map(d => (
-                        <button 
-                          key={d} 
+                        <button
+                          key={d}
                           onClick={() => { setSelectedDateFilter(d); setShowDateDropdown(false); }}
                           className={`w-full text-left px-4 py-2 text-xs transition-colors cursor-pointer ${selectedDateFilter === d ? 'text-teal-700 bg-teal-50 font-semibold' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
@@ -367,7 +366,7 @@ export default function AppointmentsScreen() {
 
               {/* Reset Filters button if any active */}
               {(selectedClinic !== 'All Clinics' || selectedType !== 'All Consultation Types' || selectedDateFilter !== 'All Dates') && (
-                <button 
+                <button
                   onClick={() => {
                     setSelectedClinic('All Clinics');
                     setSelectedType('All Consultation Types');
@@ -384,139 +383,138 @@ export default function AppointmentsScreen() {
           <div className="overflow-x-auto border-t border-slate-100">
             <div className="min-w-[800px]">
               {/* Table Header */}
-          <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-slate-50 border-b border-slate-100">
-            <div className="col-span-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Appointment ID</div>
-            <div className="col-span-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Patient Details</div>
-            <div className="col-span-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Date & Time</div>
-            <div className="col-span-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Consultation Type</div>
-            <div className="col-span-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status</div>
-            <div className="col-span-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Actions</div>
-          </div>
+              <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-slate-50 border-b border-slate-100">
+                <div className="col-span-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Appointment ID</div>
+                <div className="col-span-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Patient Details</div>
+                <div className="col-span-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Date & Time</div>
+                <div className="col-span-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Consultation Type</div>
+                <div className="col-span-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status</div>
+                <div className="col-span-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Actions</div>
+              </div>
 
-          {/* Table Rows */}
-          <div className="divide-y divide-slate-100">
-            {filtered.map(apt => {
-              const isSelected = selectedApp?.id === apt.id;
-              const status = STATUS_CONFIG[apt.status] ?? { bg: 'bg-slate-100', text: 'text-slate-600' };
-              return (
-                <div
-                  key={apt.id}
-                  onClick={() => setSelectedApp(isSelected ? null : apt)}
-                  className={`grid grid-cols-12 gap-3 px-5 py-3.5 items-center cursor-pointer transition-all ${
-                    isSelected ? 'bg-teal-50/60 border-l-2 border-teal-500' : 'hover:bg-slate-50 border-l-2 border-transparent'
-                  }`}
-                >
-                  {/* ID */}
-                  <div className="col-span-2">
-                    <span className="text-xs font-semibold text-slate-600 font-mono">{apt.id}</span>
-                  </div>
-
-                  {/* Patient */}
-                  <div className="col-span-3 flex items-center gap-2.5">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${apt.avatarColor}`}>
-                      {apt.initials}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800">
-                        {apt.patient}
-                        <span className="ml-1 text-slate-400 text-[10px]">{apt.gender === 'M' ? '♂' : '♀'}</span>
-                      </p>
-                      <p className="text-[11px] text-slate-400">{apt.age} Years • {apt.patientId}</p>
-                    </div>
-                  </div>
-
-                  {/* Date & Time */}
-                  <div className="col-span-2">
-                    <div className="flex items-center gap-1 text-xs font-medium text-slate-700">
-                      <Calendar className="w-3 h-3 text-slate-400" />
-                      {apt.date}
-                    </div>
-                    <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
-                      <Clock className="w-3 h-3" />
-                      {apt.time}
-                    </div>
-                  </div>
-
-                  {/* Type */}
-                  <div className="col-span-2">
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
-                      <TypeIcon type={apt.type} />
-                      {apt.type}
-                    </div>
-                    <p className="text-[11px] text-slate-400 mt-0.5 pl-5">{apt.location}</p>
-                  </div>
-
-                  {/* Status */}
-                  <div className="col-span-1">
-                    <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg ${status.bg} ${status.text}`}>
-                      {apt.status}
-                    </span>
-                  </div>
-
-                  {/* Actions */}
-                  <div className={`col-span-2 flex items-center justify-end gap-2 relative animate-fade ${activeRowMenuId === apt.id ? 'z-50' : 'z-10'}`} onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => setSelectedApp(apt)}
-                      className="text-xs font-semibold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+              {/* Table Rows */}
+              <div className="divide-y divide-slate-100">
+                {filtered.map(apt => {
+                  const isSelected = selectedApp?.id === apt.id;
+                  const status = STATUS_CONFIG[apt.status] ?? { bg: 'bg-slate-100', text: 'text-slate-600' };
+                  return (
+                    <div
+                      key={apt.id}
+                      onClick={() => setSelectedApp(isSelected ? null : apt)}
+                      className={`grid grid-cols-12 gap-3 px-5 py-3.5 items-center cursor-pointer transition-all ${isSelected ? 'bg-teal-50/60 border-l-2 border-teal-500' : 'hover:bg-slate-50 border-l-2 border-transparent'
+                        }`}
                     >
-                      View
-                    </button>
-                    <button 
-                      onClick={() => setActiveRowMenuId(activeRowMenuId === apt.id ? null : apt.id)}
-                      className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
+                      {/* ID */}
+                      <div className="col-span-2">
+                        <span className="text-xs font-semibold text-slate-600 font-mono">{apt.id}</span>
+                      </div>
 
-                    {activeRowMenuId === apt.id && (
-                      <>
-                        <div className="fixed inset-0 z-30" onClick={() => setActiveRowMenuId(null)} />
-                        <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-slate-200 shadow-xl rounded-xl py-1.5 z-40 text-left">
-                          {apt.status !== 'Completed' && apt.status !== 'Cancelled' && (
-                            <button
-                              onClick={() => {
-                                setActiveRowMenuId(null);
-                                setSelectedApp(apt);
-                                setConsultationNotes(apt.notes || '');
-                                setIsStartConsultationOpen(true);
-                              }}
-                              className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
-                            >
-                              <Stethoscope className="w-3.5 h-3.5 text-teal-600" /> Start Consultation
-                            </button>
-                          )}
-                          <button
-                            onClick={() => {
-                              setActiveRowMenuId(null);
-                              setSelectedApp(apt);
-                              setRescheduleDate(apt.date);
-                              setRescheduleTime(apt.time);
-                              setIsRescheduleOpen(true);
-                            }}
-                            className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5 text-slate-500" /> Reschedule
-                          </button>
-                          {apt.status !== 'Cancelled' && apt.status !== 'Completed' && (
-                            <button
-                              onClick={() => {
-                                setActiveRowMenuId(null);
-                                setSelectedApp(apt);
-                                setIsCancelConfirmOpen(true);
-                              }}
-                              className="w-full text-left px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer border-t border-slate-100 mt-1 transition-colors"
-                            >
-                              <Ban className="w-3.5 h-3.5" /> Cancel Appointment
-                            </button>
-                          )}
+                      {/* Patient */}
+                      <div className="col-span-3 flex items-center gap-2.5">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${apt.avatarColor}`}>
+                          {apt.initials}
                         </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800">
+                            {apt.patient}
+                            <span className="ml-1 text-slate-400 text-[10px]">{apt.gender === 'M' ? '♂' : '♀'}</span>
+                          </p>
+                          <p className="text-[11px] text-slate-400">{apt.age} Years • {apt.patientId}</p>
+                        </div>
+                      </div>
+
+                      {/* Date & Time */}
+                      <div className="col-span-2">
+                        <div className="flex items-center gap-1 text-xs font-medium text-slate-700">
+                          <Calendar className="w-3 h-3 text-slate-400" />
+                          {apt.date}
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
+                          <Clock className="w-3 h-3" />
+                          {apt.time}
+                        </div>
+                      </div>
+
+                      {/* Type */}
+                      <div className="col-span-2">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
+                          <TypeIcon type={apt.type} />
+                          {apt.type}
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5 pl-5">{apt.location}</p>
+                      </div>
+
+                      {/* Status */}
+                      <div className="col-span-1">
+                        <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg ${status.bg} ${status.text}`}>
+                          {apt.status}
+                        </span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className={`col-span-2 flex items-center justify-end gap-2 relative animate-fade ${activeRowMenuId === apt.id ? 'z-50' : 'z-10'}`} onClick={e => e.stopPropagation()}>
+                        <button
+                          onClick={() => setSelectedApp(apt)}
+                          className="text-xs font-semibold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => setActiveRowMenuId(activeRowMenuId === apt.id ? null : apt.id)}
+                          className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+
+                        {activeRowMenuId === apt.id && (
+                          <>
+                            <div className="fixed inset-0 z-30" onClick={() => setActiveRowMenuId(null)} />
+                            <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-slate-200 shadow-xl rounded-xl py-1.5 z-40 text-left">
+                              {apt.status !== 'Completed' && apt.status !== 'Cancelled' && (
+                                <button
+                                  onClick={() => {
+                                    setActiveRowMenuId(null);
+                                    setSelectedApp(apt);
+                                    setConsultationNotes(apt.notes || '');
+                                    setIsStartConsultationOpen(true);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
+                                >
+                                  <Stethoscope className="w-3.5 h-3.5 text-teal-600" /> Start Consultation
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setActiveRowMenuId(null);
+                                  setSelectedApp(apt);
+                                  setRescheduleDate(apt.date);
+                                  setRescheduleTime(apt.time);
+                                  setIsRescheduleOpen(true);
+                                }}
+                                className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5 text-slate-500" /> Reschedule
+                              </button>
+                              {apt.status !== 'Cancelled' && apt.status !== 'Completed' && (
+                                <button
+                                  onClick={() => {
+                                    setActiveRowMenuId(null);
+                                    setSelectedApp(apt);
+                                    setIsCancelConfirmOpen(true);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer border-t border-slate-100 mt-1 transition-colors"
+                                >
+                                  <Ban className="w-3.5 h-3.5" /> Cancel Appointment
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -537,11 +535,10 @@ export default function AppointmentsScreen() {
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
-                    currentPage === page
+                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${currentPage === page
                       ? 'bg-teal-700 text-white shadow-sm'
                       : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   {page}
                 </button>
@@ -601,11 +598,11 @@ export default function AppointmentsScreen() {
                   </p>
                   <p className="text-[11px] text-slate-400">{selectedApp.age} Years • {selectedApp.patientId}</p>
                   <button
-                onClick={() => navigate(`/patients/${selectedApp.id.replace('APT-2025-', 'PAT12345')}`)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-teal-600 hover:text-teal-700 transition-colors mt-1"
-              >
-                View Patient Profile →
-              </button>
+                    onClick={() => navigate(`/patients/${selectedApp.id.replace('APT-2025-', 'PAT12345')}`)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-teal-600 hover:text-teal-700 transition-colors mt-1"
+                  >
+                    View Patient Profile →
+                  </button>
                 </div>
               </div>
             </div>
@@ -656,7 +653,7 @@ export default function AppointmentsScreen() {
             {/* CTA */}
             <div className="px-5 py-4 border-t border-slate-100 space-y-2">
               {selectedApp.status !== 'Completed' && selectedApp.status !== 'Cancelled' && (
-                <button 
+                <button
                   onClick={() => {
                     setConsultationNotes(selectedApp.notes || '');
                     setIsStartConsultationOpen(true);
@@ -668,7 +665,7 @@ export default function AppointmentsScreen() {
                 </button>
               )}
               {selectedApp.status === 'Completed' && (
-                <button 
+                <button
                   onClick={() => {
                     setConsultationNotes(selectedApp.notes || '');
                     setIsStartConsultationOpen(true);
@@ -682,7 +679,7 @@ export default function AppointmentsScreen() {
 
               {/* Action Row */}
               <div className="grid grid-cols-3 gap-2 pt-1">
-                <button 
+                <button
                   onClick={() => {
                     setRescheduleDate(selectedApp.date);
                     setRescheduleTime(selectedApp.time);
@@ -693,22 +690,21 @@ export default function AppointmentsScreen() {
                   <RotateCcw className="w-4 h-4 text-slate-500 group-hover:text-teal-600" />
                   <span className="text-[10px] font-semibold text-slate-500 group-hover:text-teal-600">Reschedule</span>
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     if (selectedApp.status === 'Completed' || selectedApp.status === 'Cancelled') return;
                     setIsCancelConfirmOpen(true);
                   }}
-                  className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border border-slate-200 transition-colors group ${
-                    (selectedApp.status === 'Completed' || selectedApp.status === 'Cancelled')
+                  className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border border-slate-200 transition-colors group ${(selectedApp.status === 'Completed' || selectedApp.status === 'Cancelled')
                       ? 'opacity-40 cursor-not-allowed'
                       : 'hover:bg-red-50 cursor-pointer'
-                  }`}
+                    }`}
                   disabled={selectedApp.status === 'Completed' || selectedApp.status === 'Cancelled'}
                 >
                   <Ban className="w-4 h-4 text-slate-500 group-hover:text-red-500" />
                   <span className="text-[10px] font-semibold text-slate-500 group-hover:text-red-500">Cancel</span>
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     const nextPaymentStatus = selectedApp.paymentStatus === 'Paid' ? 'Pending' : selectedApp.paymentStatus === 'Pending' ? 'Waived' : 'Paid';
                     const updated = appointments.map(a => a.id === selectedApp.id ? { ...a, paymentStatus: nextPaymentStatus as any } : a);
@@ -737,11 +733,11 @@ export default function AppointmentsScreen() {
 
       {/* RESCHEDULE MODAL */}
       {isRescheduleOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
           onClick={() => setIsRescheduleOpen(false)}
         >
-          <form 
+          <form
             onSubmit={(e) => {
               e.preventDefault();
               if (!selectedApp) return;
@@ -756,7 +752,7 @@ export default function AppointmentsScreen() {
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-sm font-bold text-slate-800">Reschedule Appointment</h3>
-              <button 
+              <button
                 type="button"
                 onClick={() => setIsRescheduleOpen(false)}
                 className="p-1 text-slate-400 hover:bg-slate-50 rounded-lg cursor-pointer"
@@ -767,8 +763,8 @@ export default function AppointmentsScreen() {
             <div className="py-4 space-y-3">
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select New Date</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={rescheduleDate}
                   onChange={e => setRescheduleDate(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-teal-400"
@@ -778,8 +774,8 @@ export default function AppointmentsScreen() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select New Time</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={rescheduleTime}
                   onChange={e => setRescheduleTime(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-teal-400"
@@ -789,14 +785,14 @@ export default function AppointmentsScreen() {
               </div>
             </div>
             <div className="flex justify-end gap-3 border-t border-slate-100 pt-3">
-              <button 
-                type="button" 
-                onClick={() => setIsRescheduleOpen(false)} 
+              <button
+                type="button"
+                onClick={() => setIsRescheduleOpen(false)}
                 className="btn btn-secondary text-xs cursor-pointer py-2 px-4"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 type="submit"
                 className="btn btn-primary text-xs cursor-pointer py-2 px-4"
               >
@@ -809,11 +805,11 @@ export default function AppointmentsScreen() {
 
       {/* CANCEL APPOINTMENT CONFIRMATION MODAL */}
       {isCancelConfirmOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
           onClick={() => setIsCancelConfirmOpen(false)}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 animate-fade"
             onClick={e => e.stopPropagation()}
           >
@@ -822,13 +818,13 @@ export default function AppointmentsScreen() {
               Are you sure you want to cancel the appointment for <b>{selectedApp?.patient}</b> on {selectedApp?.date}? This will change the status to cancelled.
             </p>
             <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => setIsCancelConfirmOpen(false)} 
+              <button
+                onClick={() => setIsCancelConfirmOpen(false)}
                 className="btn btn-secondary text-xs cursor-pointer py-2 px-4"
               >
                 No, Keep
               </button>
-              <button 
+              <button
                 onClick={() => {
                   if (!selectedApp) return;
                   const updated = appointments.map(a => a.id === selectedApp.id ? { ...a, status: 'Cancelled' as const } : a);
@@ -848,11 +844,11 @@ export default function AppointmentsScreen() {
 
       {/* START CONSULTATION / NOTES MODAL */}
       {isStartConsultationOpen && selectedApp && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
           onClick={() => setIsStartConsultationOpen(false)}
         >
-          <form 
+          <form
             onSubmit={(e) => {
               e.preventDefault();
               const updated = appointments.map(a => a.id === selectedApp.id ? { ...a, status: 'Completed' as const, notes: consultationNotes } : a);
@@ -869,7 +865,7 @@ export default function AppointmentsScreen() {
                 <h3 className="text-sm font-bold text-slate-800">Consultation Notes</h3>
                 <p className="text-[10px] text-slate-400 mt-0.5">Patient: {selectedApp.patient} ({selectedApp.patientId})</p>
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={() => setIsStartConsultationOpen(false)}
                 className="p-1 text-slate-400 hover:bg-slate-50 rounded-lg cursor-pointer"
@@ -880,8 +876,8 @@ export default function AppointmentsScreen() {
             <div className="py-4 space-y-3">
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Reason for Visit</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={selectedApp.reason}
                   disabled
                   className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3.5 py-2.5 text-xs text-slate-500 font-medium"
@@ -889,7 +885,7 @@ export default function AppointmentsScreen() {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Clinical / Consultation Notes</label>
-                <textarea 
+                <textarea
                   value={consultationNotes}
                   onChange={e => setConsultationNotes(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-teal-400 min-h-[120px]"
@@ -899,14 +895,14 @@ export default function AppointmentsScreen() {
               </div>
             </div>
             <div className="flex justify-end gap-3 border-t border-slate-100 pt-3">
-              <button 
-                type="button" 
-                onClick={() => setIsStartConsultationOpen(false)} 
+              <button
+                type="button"
+                onClick={() => setIsStartConsultationOpen(false)}
                 className="btn btn-secondary text-xs cursor-pointer py-2 px-4"
               >
                 Close
               </button>
-              <button 
+              <button
                 type="submit"
                 className="btn btn-primary text-xs cursor-pointer py-2 px-4"
               >

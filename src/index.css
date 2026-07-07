@@ -15,6 +15,8 @@
   --color-error-light: rgba(244, 63, 94, 0.1);
   --color-warning: #f59e0b;
   --color-warning-light: rgba(245, 158, 11, 0.1);
+  
+  --backdrop-blur-xs: 8px;
 }
 
 :root {
@@ -172,4 +174,35 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Custom scrollbar with reduced opacity for modals */
+.modal-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(203, 213, 225, 0.4) transparent;
+}
+
+.modal-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(203, 213, 225, 0.4);
+  border-radius: 9999px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+/* Printing styles for prescription pad */
+@media print {
+  #root {
+    display: none !important;
+  }
 }

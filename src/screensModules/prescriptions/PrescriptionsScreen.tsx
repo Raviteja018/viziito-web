@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   FileText,
   Search,
@@ -60,13 +61,13 @@ interface Patient {
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 const MOCK_PRESCRIPTIONS: Prescription[] = [
-  { id: 'RX-2025-0007', patient: 'Amit Sharma',  patientId: 'PAT123456', initials: 'AS', age: 32, gender: 'Male',   date: '28 May 2025', time: '11:30 AM', diagnosis: 'Acute Bronchitis',         status: 'Sent'    },
-  { id: 'RX-2025-0006', patient: 'Priya Singh',   patientId: 'PAT123457', initials: 'PS', age: 28, gender: 'Female', date: '27 May 2025', time: '04:15 PM', diagnosis: 'Migraine without aura',    status: 'Draft'   },
-  { id: 'RX-2025-0005', patient: 'Ramesh Kumar',  patientId: 'PAT123458', initials: 'RK', age: 45, gender: 'Male',   date: '27 May 2025', time: '10:20 AM', diagnosis: 'Essential Hypertension',   status: 'Sent'    },
-  { id: 'RX-2025-0004', patient: 'Neha Devi',     patientId: 'PAT123459', initials: 'ND', age: 35, gender: 'Female', date: '26 May 2025', time: '03:40 PM', diagnosis: 'Type 2 Diabetes Mellitus', status: 'Sent'    },
-  { id: 'RX-2025-0003', patient: 'Vikram Singh',  patientId: 'PAT123460', initials: 'VS', age: 50, gender: 'Male',   date: '26 May 2025', time: '11:05 AM', diagnosis: 'Gastroesophageal Reflux',  status: 'Expired' },
-  { id: 'RX-2025-0002', patient: 'Anjali Patel',  patientId: 'PAT123461', initials: 'AP', age: 29, gender: 'Female', date: '25 May 2025', time: '02:10 PM', diagnosis: 'Iron Deficiency Anemia',   status: 'Draft'   },
-  { id: 'RX-2025-0001', patient: 'Mohit Jain',    patientId: 'PAT123462', initials: 'MJ', age: 41, gender: 'Male',   date: '25 May 2025', time: '09:30 AM', diagnosis: 'Allergic Rhinitis',        status: 'Sent'    },
+  { id: 'RX-2025-0007', patient: 'Amit Sharma', patientId: 'PAT123456', initials: 'AS', age: 32, gender: 'Male', date: '28 May 2025', time: '11:30 AM', diagnosis: 'Acute Bronchitis', status: 'Sent' },
+  { id: 'RX-2025-0006', patient: 'Priya Singh', patientId: 'PAT123457', initials: 'PS', age: 28, gender: 'Female', date: '27 May 2025', time: '04:15 PM', diagnosis: 'Migraine without aura', status: 'Draft' },
+  { id: 'RX-2025-0005', patient: 'Ramesh Kumar', patientId: 'PAT123458', initials: 'RK', age: 45, gender: 'Male', date: '27 May 2025', time: '10:20 AM', diagnosis: 'Essential Hypertension', status: 'Sent' },
+  { id: 'RX-2025-0004', patient: 'Neha Devi', patientId: 'PAT123459', initials: 'ND', age: 35, gender: 'Female', date: '26 May 2025', time: '03:40 PM', diagnosis: 'Type 2 Diabetes Mellitus', status: 'Sent' },
+  { id: 'RX-2025-0003', patient: 'Vikram Singh', patientId: 'PAT123460', initials: 'VS', age: 50, gender: 'Male', date: '26 May 2025', time: '11:05 AM', diagnosis: 'Gastroesophageal Reflux', status: 'Expired' },
+  { id: 'RX-2025-0002', patient: 'Anjali Patel', patientId: 'PAT123461', initials: 'AP', age: 29, gender: 'Female', date: '25 May 2025', time: '02:10 PM', diagnosis: 'Iron Deficiency Anemia', status: 'Draft' },
+  { id: 'RX-2025-0001', patient: 'Mohit Jain', patientId: 'PAT123462', initials: 'MJ', age: 41, gender: 'Male', date: '25 May 2025', time: '09:30 AM', diagnosis: 'Allergic Rhinitis', status: 'Sent' },
 ];
 
 const HISTORY = [
@@ -116,8 +117,8 @@ const AVATAR_COLORS: Record<string, string> = {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: PrescriptionStatus }) {
   const styles: Record<PrescriptionStatus, string> = {
-    Sent:    'bg-emerald-50 text-emerald-700 border border-emerald-200',
-    Draft:   'bg-sky-50    text-sky-700    border border-sky-200',
+    Sent: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+    Draft: 'bg-sky-50    text-sky-700    border border-sky-200',
     Expired: 'bg-rose-50   text-rose-700   border border-rose-200',
   };
   return (
@@ -170,7 +171,7 @@ export default function PrescriptionsScreen() {
   const [diagnosis, setDiagnosis] = useState('');
   const [rxStatus, setRxStatus] = useState<PrescriptionStatus>('Sent');
   const [medications, setMedications] = useState<Medication[]>([]);
-  
+
   // Single Medication item builder state
   const [medName, setMedName] = useState('');
   const [medDosage, setMedDosage] = useState('');
@@ -188,7 +189,7 @@ export default function PrescriptionsScreen() {
   // Load state from localStorage on init
   useEffect(() => {
     // Prescriptions load
-    const savedRx = localStorage.getItem('viziito_prescriptions');
+    const savedRx = localStorage.getItem('vizito_prescriptions');
     let loadedRx: Prescription[] = [];
     if (savedRx) {
       try {
@@ -198,7 +199,7 @@ export default function PrescriptionsScreen() {
       }
     } else {
       loadedRx = MOCK_PRESCRIPTIONS;
-      localStorage.setItem('viziito_prescriptions', JSON.stringify(MOCK_PRESCRIPTIONS));
+      localStorage.setItem('vizito_prescriptions', JSON.stringify(MOCK_PRESCRIPTIONS));
     }
     setPrescriptions(loadedRx);
     if (loadedRx.length > 0) {
@@ -206,16 +207,16 @@ export default function PrescriptionsScreen() {
     }
 
     // Patients load (for select dropdown)
-    const savedPatients = localStorage.getItem('viziito_patients');
+    const savedPatients = localStorage.getItem('vizito_patients');
     const fullDefaultPatients = [
-      { id: 'PAT123456', name: 'Amit Sharma',  initials: 'AS', age: 32, gender: 'Male',   phone: '+91 98765 43210', email: 'amit.sharma@email.com',  lastVisit: '28 May 2025', lastVisitTime: '11:30 AM', status: 'Active' as const,   appointments: 8  },
-      { id: 'PAT123457', name: 'Priya Singh',  initials: 'PS', age: 28, gender: 'Female', phone: '+91 91234 56789', email: 'priya.singh@email.com',   lastVisit: '27 May 2025', lastVisitTime: '04:15 PM', status: 'Active' as const,   appointments: 5  },
-      { id: 'PAT123458', name: 'Ramesh Kumar', initials: 'RK', age: 45, gender: 'Male',   phone: '+91 99876 54321', email: 'ramesh.kumar@email.com',  lastVisit: '27 May 2025', lastVisitTime: '10:20 AM', status: 'Active' as const,   appointments: 12 },
-      { id: 'PAT123459', name: 'Neha Devi',   initials: 'ND', age: 35, gender: 'Female', phone: '+91 93456 78901', email: 'neha.devi@email.com',     lastVisit: '26 May 2025', lastVisitTime: '03:40 PM', status: 'Active' as const,   appointments: 6  },
-      { id: 'PAT123460', name: 'Vikram Singh', initials: 'VS', age: 50, gender: 'Male',   phone: '+91 90000 11223', email: 'vikram.singh@email.com',  lastVisit: '26 May 2025', lastVisitTime: '11:05 AM', status: 'Inactive' as const, appointments: 3  },
-      { id: 'PAT123461', name: 'Anjali Patel', initials: 'AP', age: 29, gender: 'Female', phone: '+91 95555 66778', email: 'anjali.patel@email.com',  lastVisit: '25 May 2025', lastVisitTime: '02:10 PM', status: 'Active' as const,   appointments: 4  },
-      { id: 'PAT123462', name: 'Mohit Jain',   initials: 'MJ', age: 41, gender: 'Male',   phone: '+91 97777 88990', email: 'mohit.jain@email.com',    lastVisit: '25 May 2025', lastVisitTime: '09:30 AM', status: 'Active' as const,   appointments: 7  },
-      { id: 'PAT123463', name: 'Sneha Sharma', initials: 'SS', age: 31, gender: 'Female', phone: '+91 98888 77665', email: 'sneha.sharma@email.com',  lastVisit: '24 May 2025', lastVisitTime: '06:45 PM', status: 'Active' as const,   appointments: 3  },
+      { id: 'PAT123456', name: 'Amit Sharma', initials: 'AS', age: 32, gender: 'Male', phone: '+91 98765 43210', email: 'amit.sharma@email.com', lastVisit: '28 May 2025', lastVisitTime: '11:30 AM', status: 'Active' as const, appointments: 8 },
+      { id: 'PAT123457', name: 'Priya Singh', initials: 'PS', age: 28, gender: 'Female', phone: '+91 91234 56789', email: 'priya.singh@email.com', lastVisit: '27 May 2025', lastVisitTime: '04:15 PM', status: 'Active' as const, appointments: 5 },
+      { id: 'PAT123458', name: 'Ramesh Kumar', initials: 'RK', age: 45, gender: 'Male', phone: '+91 99876 54321', email: 'ramesh.kumar@email.com', lastVisit: '27 May 2025', lastVisitTime: '10:20 AM', status: 'Active' as const, appointments: 12 },
+      { id: 'PAT123459', name: 'Neha Devi', initials: 'ND', age: 35, gender: 'Female', phone: '+91 93456 78901', email: 'neha.devi@email.com', lastVisit: '26 May 2025', lastVisitTime: '03:40 PM', status: 'Active' as const, appointments: 6 },
+      { id: 'PAT123460', name: 'Vikram Singh', initials: 'VS', age: 50, gender: 'Male', phone: '+91 90000 11223', email: 'vikram.singh@email.com', lastVisit: '26 May 2025', lastVisitTime: '11:05 AM', status: 'Inactive' as const, appointments: 3 },
+      { id: 'PAT123461', name: 'Anjali Patel', initials: 'AP', age: 29, gender: 'Female', phone: '+91 95555 66778', email: 'anjali.patel@email.com', lastVisit: '25 May 2025', lastVisitTime: '02:10 PM', status: 'Active' as const, appointments: 4 },
+      { id: 'PAT123462', name: 'Mohit Jain', initials: 'MJ', age: 41, gender: 'Male', phone: '+91 97777 88990', email: 'mohit.jain@email.com', lastVisit: '25 May 2025', lastVisitTime: '09:30 AM', status: 'Active' as const, appointments: 7 },
+      { id: 'PAT123463', name: 'Sneha Sharma', initials: 'SS', age: 31, gender: 'Female', phone: '+91 98888 77665', email: 'sneha.sharma@email.com', lastVisit: '24 May 2025', lastVisitTime: '06:45 PM', status: 'Active' as const, appointments: 3 },
     ];
 
     if (savedPatients) {
@@ -224,7 +225,7 @@ export default function PrescriptionsScreen() {
         const isCorrupt = parsed.some((p: any) => !p.phone || !p.status);
         if (isCorrupt) {
           setPatients(fullDefaultPatients);
-          localStorage.setItem('viziito_patients', JSON.stringify(fullDefaultPatients));
+          localStorage.setItem('vizito_patients', JSON.stringify(fullDefaultPatients));
         } else {
           setPatients(parsed);
         }
@@ -233,14 +234,14 @@ export default function PrescriptionsScreen() {
       }
     } else {
       setPatients(fullDefaultPatients);
-      localStorage.setItem('viziito_patients', JSON.stringify(fullDefaultPatients));
+      localStorage.setItem('vizito_patients', JSON.stringify(fullDefaultPatients));
     }
   }, []);
 
   // Sync back to localstorage
   const syncPrescriptions = (updated: Prescription[]) => {
     setPrescriptions(updated);
-    localStorage.setItem('viziito_prescriptions', JSON.stringify(updated));
+    localStorage.setItem('vizito_prescriptions', JSON.stringify(updated));
   };
 
   const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
@@ -260,28 +261,28 @@ export default function PrescriptionsScreen() {
     const matchTab =
       activeTab === 'All Prescriptions' ||
       rx.status === activeTab.replace('s', ''); // Drafts -> Draft, Sent, Expired
-      
+
     const matchSearch =
       rx.patient.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rx.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rx.diagnosis.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
     const matchStatus =
       statusFilter === 'All Status' || rx.status === statusFilter;
 
     const matchDate =
       dateFilter === 'All' || rx.date === dateFilter;
-      
+
     return matchTab && matchSearch && matchStatus && matchDate;
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paginated  = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const tabCounts: Record<Tab, number> = {
     'All Prescriptions': prescriptions.length,
-    'Drafts':  prescriptions.filter(r => r.status === 'Draft').length,
-    'Sent':    prescriptions.filter(r => r.status === 'Sent').length,
+    'Drafts': prescriptions.filter(r => r.status === 'Draft').length,
+    'Sent': prescriptions.filter(r => r.status === 'Sent').length,
     'Expired': prescriptions.filter(r => r.status === 'Expired').length,
   };
 
@@ -340,17 +341,17 @@ export default function PrescriptionsScreen() {
     const updated = [newRx, ...prescriptions];
     syncPrescriptions(updated);
     setSelectedRx(newRx);
-    
+
     // Increment patient prescription counts in localStorage if detail exists
-    const savedDetails = localStorage.getItem('viziito_patient_details');
+    const savedDetails = localStorage.getItem('vizito_patient_details');
     if (savedDetails) {
       try {
         const detailsDict = JSON.parse(savedDetails);
         if (detailsDict[patient.id]) {
           detailsDict[patient.id].totalPrescriptions += 1;
-          localStorage.setItem('viziito_patient_details', JSON.stringify(detailsDict));
+          localStorage.setItem('vizito_patient_details', JSON.stringify(detailsDict));
         }
-      } catch (err) {}
+      } catch (err) { }
     }
 
     setIsNewModalOpen(false);
@@ -442,7 +443,7 @@ export default function PrescriptionsScreen() {
 
   return (
     <div className="w-full animate-fade flex flex-col gap-0" style={{ minHeight: 0 }}>
-      
+
       {/* ─── Toast Alerts ──────────────────────────────────────────────────── */}
       {toast && (
         <div className="fixed bottom-5 right-5 z-50 animate-fade flex items-center gap-3 bg-slate-900 border border-slate-800 text-white px-5 py-3.5 rounded-2xl shadow-xl max-w-sm">
@@ -464,14 +465,14 @@ export default function PrescriptionsScreen() {
           <p className="text-slate-500 text-sm mt-0.5">Create, view and manage patient prescriptions</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <button 
+          <button
             onClick={() => setIsImportModalOpen(true)}
             className="flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer"
           >
             <Download className="w-4 h-4" />
             Import Prescription
           </button>
-          <button 
+          <button
             onClick={() => { resetNewForm(); setIsNewModalOpen(true); }}
             className="btn btn-primary flex items-center gap-2 px-5 py-2.5 shadow-md shadow-teal-500/20 text-sm cursor-pointer"
           >
@@ -494,11 +495,10 @@ export default function PrescriptionsScreen() {
                 <button
                   key={tab}
                   onClick={() => { setActiveTab(tab); setCurrentPage(1); }}
-                  className={`relative px-4 py-3 text-sm font-semibold transition-colors whitespace-nowrap cursor-pointer ${
-                    activeTab === tab
+                  className={`relative px-4 py-3 text-sm font-semibold transition-colors whitespace-nowrap cursor-pointer ${activeTab === tab
                       ? 'text-teal-700'
                       : 'text-slate-500 hover:text-slate-800'
-                  }`}
+                    }`}
                 >
                   {tab}
                   {activeTab === tab && (
@@ -529,7 +529,7 @@ export default function PrescriptionsScreen() {
 
               {/* Date range chip */}
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
                   className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-600 font-medium hover:border-slate-300 transition-all shadow-sm whitespace-nowrap cursor-pointer"
                 >
@@ -591,14 +591,13 @@ export default function PrescriptionsScreen() {
               {['Prescription ID', 'Patient Details', 'Date', 'Diagnosis', 'Status', 'Actions'].map((col, i) => (
                 <div
                   key={col}
-                  className={`text-[11px] font-bold text-slate-400 uppercase tracking-wider ${
-                    i === 0 ? 'col-span-2' :
-                    i === 1 ? 'col-span-3' :
-                    i === 2 ? 'col-span-2' :
-                    i === 3 ? 'col-span-2' :
-                    i === 4 ? 'col-span-2' :
-                    'col-span-1 text-right'
-                  }`}
+                  className={`text-[11px] font-bold text-slate-400 uppercase tracking-wider ${i === 0 ? 'col-span-2' :
+                      i === 1 ? 'col-span-3' :
+                        i === 2 ? 'col-span-2' :
+                          i === 3 ? 'col-span-2' :
+                            i === 4 ? 'col-span-2' :
+                              'col-span-1 text-right'
+                    }`}
                 >
                   {col}
                 </div>
@@ -617,11 +616,10 @@ export default function PrescriptionsScreen() {
                   <div
                     key={rx.id}
                     onClick={() => setSelectedRx(rx)}
-                    className={`grid grid-cols-12 gap-2 px-5 py-3.5 items-center cursor-pointer transition-colors group relative ${
-                      selectedRx?.id === rx.id
+                    className={`grid grid-cols-12 gap-2 px-5 py-3.5 items-center cursor-pointer transition-colors group relative ${selectedRx?.id === rx.id
                         ? 'bg-teal-50/60 border-l-2 border-l-teal-500'
                         : 'hover:bg-slate-50/80 border-l-2 border-l-transparent'
-                    }`}
+                      }`}
                   >
                     {/* ID */}
                     <div className="col-span-2">
@@ -675,24 +673,24 @@ export default function PrescriptionsScreen() {
 
                       {/* Dropdown Menu */}
                       {activeMenuRxId === rx.id && (
-                        <div 
+                        <div
                           className="absolute right-0 top-8 mt-1 w-40 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-50 animate-fade"
                           onClick={e => e.stopPropagation()}
                         >
-                          <button 
+                          <button
                             onClick={() => { setActiveMenuRxId(null); setSelectedRx(rx); setIsViewRxModalOpen(true); }}
                             className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
                           >
                             <Eye className="w-3.5 h-3.5 text-slate-400" /> View / Print
                           </button>
-                          <button 
+                          <button
                             onClick={() => { setActiveMenuRxId(null); handleSendAgain(rx); }}
                             className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
                           >
                             <Send className="w-3.5 h-3.5 text-slate-400" /> Send SMS
                           </button>
                           <div className="border-t border-slate-100 my-1" />
-                          <button 
+                          <button
                             onClick={() => { setActiveMenuRxId(null); setSelectedRx(rx); setIsDeleteConfirmOpen(true); }}
                             className="w-full text-left px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer"
                           >
@@ -723,11 +721,10 @@ export default function PrescriptionsScreen() {
                   <button
                     key={idx + 1}
                     onClick={() => setCurrentPage(idx + 1)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      currentPage === idx + 1
+                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${currentPage === idx + 1
                         ? 'bg-teal-600 text-white shadow-sm'
                         : 'border border-slate-200 text-slate-600 hover:border-slate-300'
-                    }`}
+                      }`}
                   >
                     {idx + 1}
                   </button>
@@ -751,7 +748,7 @@ export default function PrescriptionsScreen() {
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-800">Patient Summary</h3>
-              <button 
+              <button
                 onClick={() => {
                   if (selectedRx) {
                     navigate(`/patients/${selectedRx.patientId}`);
@@ -781,7 +778,7 @@ export default function PrescriptionsScreen() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={() => navigate(`/patients/${selectedRx.patientId}`)}
                   className="text-xs font-semibold text-teal-600 hover:text-teal-700 flex items-center gap-1 mb-5 transition-colors cursor-pointer"
                 >
@@ -838,14 +835,14 @@ export default function PrescriptionsScreen() {
               </div>
 
               <div className="space-y-2.5 mt-4">
-                <button 
+                <button
                   onClick={() => setIsViewRxModalOpen(true)}
                   className="w-full flex items-center justify-center gap-2 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer"
                 >
                   <Eye className="w-4 h-4" />
                   View Full Prescription
                 </button>
-                <button 
+                <button
                   onClick={() => handleSendAgain(selectedRx)}
                   className="w-full flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer"
                 >
@@ -860,7 +857,7 @@ export default function PrescriptionsScreen() {
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-slate-800">Prescription History</h3>
-              <button 
+              <button
                 onClick={() => {
                   setActiveTab('All Prescriptions');
                   showToast('Showing all historical prescriptions.');
@@ -893,18 +890,18 @@ export default function PrescriptionsScreen() {
 
       {/* NEW PRESCRIPTION MODAL */}
       {isNewModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={() => setIsNewModalOpen(false)}
         >
-          <div 
-            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto animate-fade"
+          <div
+            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto modal-scrollbar animate-fade"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
               <h3 className="text-lg font-bold text-slate-800">Create Prescription</h3>
-              <button 
-                onClick={() => setIsNewModalOpen(false)} 
+              <button
+                onClick={() => setIsNewModalOpen(false)}
                 className="p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 rounded-lg transition-all cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -956,8 +953,8 @@ export default function PrescriptionsScreen() {
                           <span className="text-slate-500">{med.dosage} · {med.frequency}</span>
                           <span className="text-slate-400 text-right">{med.duration}</span>
                         </div>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => removeMedication(index)}
                           className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer ml-3 shrink-0"
                         >
@@ -974,9 +971,9 @@ export default function PrescriptionsScreen() {
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 items-end">
                   <div className="sm:col-span-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Drug Name & strength</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. Amoxicillin 500mg" 
+                    <input
+                      type="text"
+                      placeholder="e.g. Amoxicillin 500mg"
                       value={medName}
                       onChange={e => setMedName(e.target.value)}
                       className="form-control py-2 text-xs"
@@ -984,9 +981,9 @@ export default function PrescriptionsScreen() {
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Dosage</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. 500mg" 
+                    <input
+                      type="text"
+                      placeholder="e.g. 500mg"
                       value={medDosage}
                       onChange={e => setMedDosage(e.target.value)}
                       className="form-control py-2 text-xs"
@@ -994,9 +991,9 @@ export default function PrescriptionsScreen() {
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Frequency</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. Twice daily" 
+                    <input
+                      type="text"
+                      placeholder="e.g. Twice daily"
                       value={medFreq}
                       onChange={e => setMedFreq(e.target.value)}
                       className="form-control py-2 text-xs"
@@ -1006,9 +1003,9 @@ export default function PrescriptionsScreen() {
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 items-end mt-2">
                   <div className="sm:col-span-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Duration</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. 5 Days or Continuous" 
+                    <input
+                      type="text"
+                      placeholder="e.g. 5 Days or Continuous"
                       value={medDur}
                       onChange={e => setMedDur(e.target.value)}
                       className="form-control py-2 text-xs"
@@ -1031,22 +1028,22 @@ export default function PrescriptionsScreen() {
                   <label className="form-label">Initial Status</label>
                   <div className="flex gap-4 mt-2">
                     <label className="inline-flex items-center text-xs font-semibold text-slate-700 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="rxStatus" 
-                        checked={rxStatus === 'Sent'} 
+                      <input
+                        type="radio"
+                        name="rxStatus"
+                        checked={rxStatus === 'Sent'}
                         onChange={() => setRxStatus('Sent')}
-                        className="mr-1.5 text-teal-600 focus:ring-teal-500" 
+                        className="mr-1.5 text-teal-600 focus:ring-teal-500"
                       />
                       Sent (Active)
                     </label>
                     <label className="inline-flex items-center text-xs font-semibold text-slate-700 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="rxStatus" 
-                        checked={rxStatus === 'Draft'} 
+                      <input
+                        type="radio"
+                        name="rxStatus"
+                        checked={rxStatus === 'Draft'}
                         onChange={() => setRxStatus('Draft')}
-                        className="mr-1.5 text-teal-600 focus:ring-teal-500" 
+                        className="mr-1.5 text-teal-600 focus:ring-teal-500"
                       />
                       Draft
                     </label>
@@ -1075,26 +1072,26 @@ export default function PrescriptionsScreen() {
       )}
 
       {/* VIEW PRESCRIPTION RX PAD MODAL */}
-      {isViewRxModalOpen && selectedRx && (
-        <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+      {isViewRxModalOpen && selectedRx && createPortal(
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 print:bg-transparent print:backdrop-blur-none print:p-0 print:relative print:block print:z-0"
           onClick={() => setIsViewRxModalOpen(false)}
         >
-          <div 
-            className="bg-white rounded-2xl max-w-2xl w-full p-0 shadow-2xl border border-slate-150 overflow-hidden animate-fade"
+          <div
+            className="bg-white rounded-2xl max-w-2xl w-full p-0 shadow-2xl border border-slate-150 overflow-hidden animate-fade print:max-w-full print:border-none print:shadow-none print:rounded-none print:m-0 print:p-0"
             onClick={e => e.stopPropagation()}
           >
             {/* Header controls */}
-            <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+            <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center justify-between print:hidden">
               <span className="text-xs font-bold text-slate-600">Prescription View: {selectedRx.id}</span>
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => window.print()}
                   className="btn btn-secondary py-1 px-3 text-xs flex items-center gap-1.5 shadow-sm border border-slate-200 cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5" /> Print
                 </button>
-                <button 
+                <button
                   onClick={() => setIsViewRxModalOpen(false)}
                   className="p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-lg cursor-pointer"
                 >
@@ -1104,8 +1101,8 @@ export default function PrescriptionsScreen() {
             </div>
 
             {/* The Rx Pad */}
-            <div className="p-8 bg-white text-slate-800 print:p-0" id="rx-pad-print-area">
-              
+            <div className="p-8 bg-white text-slate-800 print:p-6 print:pt-12" id="rx-pad-print-area">
+
               {/* Doctor details */}
               <div className="flex justify-between items-start border-b-2 border-slate-200 pb-4 mb-6">
                 <div>
@@ -1114,7 +1111,7 @@ export default function PrescriptionsScreen() {
                   <p className="text-[10px] text-slate-400">Reg. No: AP-2015-88329</p>
                 </div>
                 <div className="text-right">
-                  <h3 className="text-xs font-extrabold text-slate-700">VIZIITO CLINIC CENTER</h3>
+                  <h3 className="text-xs font-extrabold text-slate-700">vizito CLINIC CENTER</h3>
                   <p className="text-[10px] text-slate-400 mt-0.5">H.No 12-3-45, Banjara Hills Rd 2</p>
                   <p className="text-[10px] text-slate-400">Hyderabad, TS - 500034</p>
                   <p className="text-[10px] text-slate-400">Ph: +91 40 2234 5678</p>
@@ -1188,16 +1185,17 @@ export default function PrescriptionsScreen() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* DELETE RX CONFIRMATION */}
       {isDeleteConfirmOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
           onClick={() => setIsDeleteConfirmOpen(false)}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade"
             onClick={e => e.stopPropagation()}
           >
@@ -1209,14 +1207,14 @@ export default function PrescriptionsScreen() {
               Are you sure you want to permanently delete prescription <b>{selectedRx?.id}</b> for <b>{selectedRx?.patient}</b>? This record will be erased from patient records database.
             </p>
             <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => setIsDeleteConfirmOpen(false)} 
+              <button
+                onClick={() => setIsDeleteConfirmOpen(false)}
                 className="btn btn-secondary text-xs cursor-pointer py-2 px-4"
               >
                 Cancel
               </button>
-              <button 
-                onClick={handleDeleteRxConfirm} 
+              <button
+                onClick={handleDeleteRxConfirm}
                 className="btn bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2 px-4 rounded-xl cursor-pointer"
               >
                 Confirm Delete
@@ -1228,18 +1226,18 @@ export default function PrescriptionsScreen() {
 
       {/* IMPORT PRESCRIPTION MODAL */}
       {isImportModalOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4"
           onClick={() => setIsImportModalOpen(false)}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
               <h3 className="text-sm font-bold text-slate-800">Import Prescription</h3>
-              <button 
-                onClick={() => setIsImportModalOpen(false)} 
+              <button
+                onClick={() => setIsImportModalOpen(false)}
                 className="p-1 text-slate-400 hover:bg-slate-50 rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -1251,11 +1249,11 @@ export default function PrescriptionsScreen() {
                 <FileText className="w-10 h-10 text-slate-400" />
                 <p className="text-xs font-bold text-slate-700">Drag & drop scanned Rx file here</p>
                 <p className="text-[10px] text-slate-400">or upload pdf / image prescription</p>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   accept=".pdf,.png,.jpg,.jpeg"
                   onChange={e => setImportFile(e.target.files ? e.target.files[0] : null)}
-                  className="hidden" 
+                  className="hidden"
                   id="rx-import-input"
                 />
                 <button
@@ -1289,15 +1287,15 @@ export default function PrescriptionsScreen() {
               )}
 
               <div className="flex justify-end gap-3 border-t border-slate-100 pt-3">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   disabled={isImporting}
-                  onClick={() => setIsImportModalOpen(false)} 
+                  onClick={() => setIsImportModalOpen(false)}
                   className="btn btn-secondary text-xs cursor-pointer py-2 px-4"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   disabled={isImporting || !importFile}
                   className="btn btn-primary text-xs cursor-pointer py-2 px-4"

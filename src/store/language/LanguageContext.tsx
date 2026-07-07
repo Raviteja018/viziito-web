@@ -183,12 +183,12 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    return (localStorage.getItem('viziito_language') as Language) || 'en';
+    return (localStorage.getItem('vizito_language') as Language) || 'en';
   });
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    localStorage.setItem('viziito_language', lang);
+    localStorage.setItem('vizito_language', lang);
   };
 
   const t = (key: string): string => {
