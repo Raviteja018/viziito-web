@@ -1,36 +1,50 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro", "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   
-  --color-primary: #0d9488;
-  --color-primary-hover: #0f766e;
-  --color-primary-light: rgba(13, 148, 136, 0.08);
-  --color-secondary: #0ea5e9;
-  --color-secondary-hover: #0284c7;
-  --color-success: #10b981;
-  --color-success-light: rgba(16, 185, 129, 0.1);
-  --color-error: #f43f5e;
-  --color-error-light: rgba(244, 63, 94, 0.1);
-  --color-warning: #f59e0b;
-  --color-warning-light: rgba(245, 158, 11, 0.1);
+  --color-primary: #F2AC4A;
+  --color-primary-hover: #E09A38;
+  --color-primary-light: rgba(242, 172, 74, 0.08);
+  --color-secondary: #FF7F4D;
+  --color-secondary-hover: #E06F41;
+  --color-success: #54BC88;
+  --color-success-light: rgba(84, 188, 136, 0.1);
+  --color-error: #E86A6A;
+  --color-error-light: rgba(232, 106, 106, 0.1);
+  --color-warning: #F2C78D;
+  --color-warning-light: rgba(242, 199, 141, 0.1);
   
+  /* Global teal palette override to orange/yellow */
+  --color-teal-50: #FFF5F2;
+  --color-teal-100: #F8DDBC;
+  --color-teal-200: #F5D2A8;
+  --color-teal-300: #F2C78D;
+  --color-teal-400: #F0BD7C;
+  --color-teal-500: #F2AC4A;
+  --color-teal-650: #F2AC4A;
+  --color-teal-600: #F2AC4A;
+  --color-teal-700: #E09A38;
+  --color-teal-750: #D28A26;
+  --color-teal-800: #D28A26;
+  --color-teal-900: #B26A06;
+  --color-teal-950: #7E4802;
+
   --backdrop-blur-xs: 8px;
 }
 
 :root {
-  --bg-gradient: radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.05) 0%, transparent 40%),
-                 radial-gradient(circle at 100% 100%, rgba(13, 148, 136, 0.08) 0%, transparent 40%);
+  --bg-gradient: radial-gradient(circle at 0% 0%, rgba(242, 172, 74, 0.05) 0%, transparent 40%),
+                 radial-gradient(circle at 100% 100%, rgba(242, 172, 74, 0.08) 0%, transparent 40%);
   
   --bg-card: rgba(255, 255, 255, 0.85);
   --border-color: rgba(226, 232, 240, 0.8);
-  --border-glow: rgba(13, 148, 136, 0.15);
+  --border-glow: rgba(242, 172, 74, 0.15);
   
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 10px 25px -5px rgba(13, 148, 136, 0.05), 0 8px 16px -6px rgba(13, 148, 136, 0.03);
+  --shadow-md: 0 10px 25px -5px rgba(242, 172, 74, 0.05), 0 8px 16px -6px rgba(242, 172, 74, 0.03);
   --shadow-lg: 0 20px 40px -10px rgba(15, 23, 42, 0.07);
-  --shadow-glow: 0 0 20px rgba(13, 148, 136, 0.1);
+  --shadow-glow: 0 0 20px rgba(242, 172, 74, 0.1);
 }
 
 body {
@@ -89,8 +103,8 @@ body {
 
 .form-control:focus {
   outline: none;
-  border-color: #0d9488;
-  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-light);
 }
 
 .btn {
@@ -109,14 +123,14 @@ body {
 }
 
 .btn-primary {
-  background: #0d9488;
+  background: var(--color-primary);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #0f766e;
+  background: var(--color-primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
+  box-shadow: 0 4px 12px var(--border-glow);
 }
 
 .btn-secondary {
@@ -133,12 +147,12 @@ body {
 
 .btn-outline {
   background: transparent;
-  border: 1.5px solid #0d9488;
-  color: #0d9488;
+  border: 1.5px solid var(--color-primary);
+  color: var(--color-primary);
 }
 
 .btn-outline:hover {
-  background: rgba(13, 148, 136, 0.08);
+  background: var(--color-primary-light);
   transform: translateY(-1px);
 }
 

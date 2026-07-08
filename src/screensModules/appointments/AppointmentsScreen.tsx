@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import {
   Plus, ChevronDown, Calendar, Video, Building2, Home,
   ChevronLeft, ChevronRight, MoreVertical, X,
@@ -113,13 +115,47 @@ export default function AppointmentsScreen() {
   const [activeRowMenuId, setActiveRowMenuId] = useState<string | null>(null);
 
   // Modals
+  // Modals state
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
-  const [rescheduleDate, setRescheduleDate] = useState('26 May 2025');
-  const [rescheduleTime, setRescheduleTime] = useState('09:30 AM');
-
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [isStartConsultationOpen, setIsStartConsultationOpen] = useState(false);
-  const [consultationNotes, setConsultationNotes] = useState('');
+
+  // Forms via Formik
+  const rescheduleFormik = useFormik({
+    initialValues: {
+      date: '26 May 2025',
+      time: '09:30 AM'
+    },
+    validationSchema: Yup.object({
+      date: Yup.string().required('Date is required'),
+      time: Yup.string().required('Time is required')
+    }),
+    onSubmit: (values) => {
+      if (!selectedApp) return;
+      const updated = appointments.map(a => a.id === selectedApp.id ? { ...a, date: values.date, time: values.time } : a);
+      syncAppointments(updated);
+      setSelectedApp({ ...selectedApp, date: values.date, time: values.time });
+      setIsRescheduleOpen(false);
+      showToast('Appointment rescheduled successfully.', 'success');
+    }
+  });
+
+  const consultationFormik = useFormik({
+    initialValues: {
+      notes: ''
+    },
+    validationSchema: Yup.object({
+      notes: Yup.string().required('Consultation notes are required')
+    }),
+    onSubmit: (values) => {
+      if (!selectedApp) return;
+      const updated = appointments.map(a => a.id === selectedApp.id ? { ...a, status: 'Completed' as const, notes: values.notes } : a);
+      syncAppointments(updated);
+      setSelectedApp({ ...selectedApp, status: 'Completed', notes: values.notes });
+      setIsStartConsultationOpen(false);
+      showToast('Consultation notes saved and appointment marked as Completed.', 'success');
+    }
+  });
 
   // Toast state
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
@@ -475,7 +511,7 @@ export default function AppointmentsScreen() {
                                   onClick={() => {
                                     setActiveRowMenuId(null);
                                     setSelectedApp(apt);
-                                    setConsultationNotes(apt.notes || '');
+                                    consultationFormik.setValues({ notes: apt.notes || '' });
                                     setIsStartConsultationOpen(true);
                                   }}
                                   className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
@@ -487,8 +523,7 @@ export default function AppointmentsScreen() {
                                 onClick={() => {
                                   setActiveRowMenuId(null);
                                   setSelectedApp(apt);
-                                  setRescheduleDate(apt.date);
-                                  setRescheduleTime(apt.time);
+                                  rescheduleFormik.setValues({ date: apt.date, time: apt.time });
                                   setIsRescheduleOpen(true);
                                 }}
                                 className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
@@ -655,7 +690,7 @@ export default function AppointmentsScreen() {
               {selectedApp.status !== 'Completed' && selectedApp.status !== 'Cancelled' && (
                 <button
                   onClick={() => {
-                    setConsultationNotes(selectedApp.notes || '');
+                    consultationFormik.setValues({ notes: selectedApp.notes || '' });
                     setIsStartConsultationOpen(true);
                   }}
                   className="w-full flex items-center justify-center gap-2 bg-teal-700 hover:bg-teal-800 text-white py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer"
@@ -667,7 +702,7 @@ export default function AppointmentsScreen() {
               {selectedApp.status === 'Completed' && (
                 <button
                   onClick={() => {
-                    setConsultationNotes(selectedApp.notes || '');
+                    consultationFormik.setValues({ notes: selectedApp.notes || '' });
                     setIsStartConsultationOpen(true);
                   }}
                   className="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-800 text-white py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer"
@@ -681,8 +716,7 @@ export default function AppointmentsScreen() {
               <div className="grid grid-cols-3 gap-2 pt-1">
                 <button
                   onClick={() => {
-                    setRescheduleDate(selectedApp.date);
-                    setRescheduleTime(selectedApp.time);
+                    rescheduleFormik.setValues({ date: selectedApp.date, time: selectedApp.time });
                     setIsRescheduleOpen(true);
                   }}
                   className="flex flex-col items-center gap-1 py-2.5 rounded-xl hover:bg-slate-50 border border-slate-200 transition-colors group cursor-pointer"
@@ -738,15 +772,7 @@ export default function AppointmentsScreen() {
           onClick={() => setIsRescheduleOpen(false)}
         >
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!selectedApp) return;
-              const updated = appointments.map(a => a.id === selectedApp.id ? { ...a, date: rescheduleDate, time: rescheduleTime } : a);
-              syncAppointments(updated);
-              setSelectedApp({ ...selectedApp, date: rescheduleDate, time: rescheduleTime });
-              setIsRescheduleOpen(false);
-              showToast('Appointment rescheduled successfully.', 'success');
-            }}
+            onSubmit={rescheduleFormik.handleSubmit}
             className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade"
             onClick={e => e.stopPropagation()}
           >
@@ -765,8 +791,9 @@ export default function AppointmentsScreen() {
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select New Date</label>
                 <input
                   type="text"
-                  value={rescheduleDate}
-                  onChange={e => setRescheduleDate(e.target.value)}
+                  name="date"
+                  value={rescheduleFormik.values.date}
+                  onChange={rescheduleFormik.handleChange}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-teal-400"
                   placeholder="e.g. 28 May 2025"
                   required
@@ -776,8 +803,9 @@ export default function AppointmentsScreen() {
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select New Time</label>
                 <input
                   type="text"
-                  value={rescheduleTime}
-                  onChange={e => setRescheduleTime(e.target.value)}
+                  name="time"
+                  value={rescheduleFormik.values.time}
+                  onChange={rescheduleFormik.handleChange}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-teal-400"
                   placeholder="e.g. 10:30 AM"
                   required
@@ -849,14 +877,7 @@ export default function AppointmentsScreen() {
           onClick={() => setIsStartConsultationOpen(false)}
         >
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const updated = appointments.map(a => a.id === selectedApp.id ? { ...a, status: 'Completed' as const, notes: consultationNotes } : a);
-              syncAppointments(updated);
-              setSelectedApp({ ...selectedApp, status: 'Completed', notes: consultationNotes });
-              setIsStartConsultationOpen(false);
-              showToast('Consultation notes saved and appointment marked as Completed.', 'success');
-            }}
+            onSubmit={consultationFormik.handleSubmit}
             className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-fade"
             onClick={e => e.stopPropagation()}
           >
@@ -886,8 +907,9 @@ export default function AppointmentsScreen() {
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Clinical / Consultation Notes</label>
                 <textarea
-                  value={consultationNotes}
-                  onChange={e => setConsultationNotes(e.target.value)}
+                  name="notes"
+                  value={consultationFormik.values.notes}
+                  onChange={consultationFormik.handleChange}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-teal-400 min-h-[120px]"
                   placeholder="Enter medical observations, prescription details, diagnostic recommendations..."
                   required

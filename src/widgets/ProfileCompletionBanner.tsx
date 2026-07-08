@@ -17,23 +17,23 @@ const ProfileCompletionBanner: React.FC<Props> = ({ completionPercentage }) => {
   const offset = circumference - (completionPercentage / 100) * circumference;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+    <div className="bg-gradient-to-r from-[#FFF5F2]/60 to-[#FFFBEB]/60 border border-[#F8DDBC] rounded-2xl p-4 shadow-sm relative overflow-hidden">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         {/* Left: Progress + Text */}
         <div className="flex items-center gap-4 flex-1">
           {/* Circular Progress */}
           <div className="relative w-12 h-12 shrink-0">
             <svg viewBox="0 0 40 40" className="w-12 h-12 -rotate-90">
-              <circle cx="20" cy="20" r={radius} fill="none" stroke="#e2e8f0" strokeWidth="3.5" />
+              <circle cx="20" cy="20" r={radius} fill="none" stroke="#F8DDBC" strokeWidth="3.5" />
               <circle
                 cx="20" cy="20" r={radius} fill="none"
-                stroke="#0d9488" strokeWidth="3.5"
+                stroke="#FF7F4D" strokeWidth="3.5"
                 strokeDasharray={`${circumference}`}
                 strokeDashoffset={offset}
                 strokeLinecap="round"
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-[9px] font-extrabold text-teal-700">
+            <span className="absolute inset-0 flex items-center justify-center text-[9px] font-extrabold text-[#FF7F4D]">
               {completionPercentage}%
             </span>
           </div>
@@ -52,11 +52,11 @@ const ProfileCompletionBanner: React.FC<Props> = ({ completionPercentage }) => {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => navigate('/profile')}
-            className="bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+            className="bg-gradient-to-r from-[#FF7F4D] to-[#F2AC4A] hover:opacity-95 text-white text-sm font-bold px-4 py-2 rounded-xl transition-all shadow-sm shadow-orange-500/10"
           >
             Complete Profile
           </button>
-          <button className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+          <button className="bg-white border border-[#DEDFE0] hover:bg-slate-50 text-slate-600 text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
             Remind Me Later
           </button>
           <button

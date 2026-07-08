@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import { createPortal } from 'react-dom';
 import { 
   Calendar, Clock, Ban, SlidersHorizontal, Download, 
@@ -145,14 +147,39 @@ export default function AvailabilityScreen() {
 
   // Modal State for hospital request (can't find hospital)
   const [isHospitalRequestOpen, setIsHospitalRequestOpen] = useState(false);
-  const [newHospitalName, setNewHospitalName] = useState('');
-  const [newHospitalLoc, setNewHospitalLoc] = useState('');
+
+  const hospitalFormik = useFormik({
+    initialValues: { name: '', location: '' },
+    validationSchema: Yup.object({
+      name: Yup.string().required('Hospital name is required'),
+      location: Yup.string().required('Location is required'),
+    }),
+    onSubmit: (values, { resetForm }) => {
+      setIsHospitalRequestOpen(false);
+      showToast(`Request to register "${values.name}" has been sent to admin!`, 'success');
+      setHospitalClinic(values.name);
+      resetForm();
+    }
+  });
 
   // Exemption request state for existing availability (from dashboard table dropdown actions)
   const [exemptionTargetAv, setExemptionTargetAv] = useState<any | null>(null);
   const [exemptionSlots, setExemptionSlots] = useState<string[]>([]);
-  const [exemptionDate, setExemptionDate] = useState('25 May 2025');
-  const [exemptionReason, setExemptionReason] = useState('');
+
+  const exemptionFormik = useFormik({
+    initialValues: { date: '25 May 2025', reason: '' },
+    validationSchema: Yup.object({
+      date: Yup.string().required('Date is required'),
+      reason: Yup.string().required('Reason is required'),
+    }),
+    onSubmit: (values, { resetForm }) => {
+      if (!exemptionTargetAv || exemptionSlots.length === 0) return;
+      setExemptionTargetAv(null);
+      showToast(`Exemption request for ${exemptionSlots.length} slots sent to ${exemptionTargetAv.location} admin!`, 'success');
+      setExemptionSlots([]);
+      resetForm();
+    }
+  });
 
   const [activeRowMenuId, setActiveRowMenuId] = useState<number | null>(null);
   const [selectedAvForSlots, setSelectedAvForSlots] = useState<any>(MOCK_AVAILABILITY[0]);
@@ -328,15 +355,6 @@ export default function AvailabilityScreen() {
     });
   };
 
-  const handleRequestHospitalSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newHospitalName.trim()) return;
-    setIsHospitalRequestOpen(false);
-    showToast(`Request to register "${newHospitalName}" has been sent to admin!`, 'success');
-    setHospitalClinic(newHospitalName);
-    setNewHospitalName('');
-    setNewHospitalLoc('');
-  };
 
   const handleToggleStatus = (id: number) => {
     const updated = availabilities.map(av => {
@@ -433,16 +451,6 @@ export default function AvailabilityScreen() {
     showToast(`Access request submitted successfully to hospital admin.`, 'success');
   };
 
-  const handleDashboardExemptionSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!exemptionTargetAv || exemptionSlots.length === 0 || !exemptionReason.trim()) return;
-    
-    // Simulating submitting slot blocking exception request
-    setExemptionTargetAv(null);
-    showToast(`Exemption request for ${exemptionSlots.length} slots sent to ${exemptionTargetAv.location} admin!`, 'success');
-    setExemptionSlots([]);
-    setExemptionReason('');
-  };
 
   const resetForm = () => {
     setLocationType('Hospital');
@@ -611,7 +619,7 @@ export default function AvailabilityScreen() {
       {isHospitalRequestOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <form 
-            onSubmit={handleRequestHospitalSubmit}
+            onSubmit={hospitalFormik.handleSubmit}
             className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade"
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -630,9 +638,10 @@ export default function AvailabilityScreen() {
                 <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Hospital Name *</label>
                 <input 
                   type="text" 
+                  name="name"
                   required
-                  value={newHospitalName}
-                  onChange={e => setNewHospitalName(e.target.value)}
+                  value={hospitalFormik.values.name}
+                  onChange={hospitalFormik.handleChange}
                   placeholder="e.g. Apollo Hospitals, Jubilee Hills" 
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-teal-400"
                 />
@@ -641,9 +650,10 @@ export default function AvailabilityScreen() {
                 <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Location / City *</label>
                 <input 
                   type="text" 
+                  name="location"
                   required
-                  value={newHospitalLoc}
-                  onChange={e => setNewHospitalLoc(e.target.value)}
+                  value={hospitalFormik.values.location}
+                  onChange={hospitalFormik.handleChange}
                   placeholder="e.g. Hyderabad" 
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-teal-400"
                 />
@@ -674,7 +684,7 @@ export default function AvailabilityScreen() {
       {exemptionTargetAv && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <form 
-            onSubmit={handleDashboardExemptionSubmit}
+            onSubmit={exemptionFormik.handleSubmit}
             className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade text-left"
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -698,9 +708,10 @@ export default function AvailabilityScreen() {
                 <div className="relative max-w-xs">
                   <input 
                     type="text" 
+                    name="date"
                     required
-                    value={exemptionDate}
-                    onChange={e => setExemptionDate(e.target.value)}
+                    value={exemptionFormik.values.date}
+                    onChange={exemptionFormik.handleChange}
                     placeholder="e.g. 25 May 2025" 
                     className="w-full bg-white border border-slate-200 rounded-xl pl-3 pr-9 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-teal-400"
                   />
@@ -737,9 +748,10 @@ export default function AvailabilityScreen() {
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-2">Reason for Unavailability / Cancellation *</label>
                 <textarea 
+                  name="reason"
                   required
-                  value={exemptionReason}
-                  onChange={e => setExemptionReason(e.target.value)}
+                  value={exemptionFormik.values.reason}
+                  onChange={exemptionFormik.handleChange}
                   placeholder="e.g. Surgery schedule conflicts, medical emergency, out of city..."
                   className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-700 focus:outline-none focus:border-teal-400 min-h-[80px]"
                 />
@@ -756,9 +768,9 @@ export default function AvailabilityScreen() {
               </button>
               <button 
                 type="submit"
-                disabled={exemptionSlots.length === 0 || !exemptionReason.trim()}
+                disabled={exemptionSlots.length === 0 || !exemptionFormik.values.reason.trim()}
                 className={`text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-colors ${
-                  (exemptionSlots.length === 0 || !exemptionReason.trim())
+                  (exemptionSlots.length === 0 || !exemptionFormik.values.reason.trim())
                     ? 'bg-teal-700/50 text-teal-100 cursor-not-allowed'
                     : 'bg-teal-700 hover:bg-teal-800 text-white'
                 }`}
@@ -774,7 +786,7 @@ export default function AvailabilityScreen() {
       {!isAdding ? (
         <>
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
             <div>
               <h1 className="text-2xl font-black text-slate-800">Availability Management</h1>
               <p className="text-sm font-medium text-slate-500 mt-1">Configure your availability across locations and consultation types.</p>
@@ -784,7 +796,7 @@ export default function AvailabilityScreen() {
                 setIsAdding(true);
                 setCurrentStep(1);
               }}
-              className="bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 shadow-sm transition-colors cursor-pointer shrink-0"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm transition-colors cursor-pointer shrink-0 whitespace-nowrap"
             >
               <Plus className="w-4 h-4" /> Add Availability
             </button>
@@ -796,47 +808,47 @@ export default function AvailabilityScreen() {
               
               {/* KPI Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4">
-                <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-                  <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center shrink-0">
-                    <Calendar className="w-6 h-6 text-emerald-600" />
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 shadow-sm">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 bg-emerald-50 rounded-full flex items-center justify-center shrink-0">
+                    <Calendar className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-emerald-600" />
                   </div>
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-500 mb-0.5">Total Availabilities</p>
-                    <p className="text-2xl font-black text-slate-800 leading-tight">{availabilities.length}</p>
-                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">Across all locations</p>
+                  <div className="min-w-0 w-full">
+                    <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 mb-0.5 truncate">Total Availabilities</p>
+                    <p className="text-xl sm:text-2xl font-black text-slate-800 leading-tight">{availabilities.length}</p>
+                    <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 mt-0.5 truncate">Across all locations</p>
                   </div>
                 </div>
                 
-                <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-                  <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center shrink-0">
-                    <Clock className="w-6 h-6 text-blue-600" />
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 shadow-sm">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 bg-blue-50 rounded-full flex items-center justify-center shrink-0">
+                    <Clock className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-blue-600" />
                   </div>
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-500 mb-0.5">Total Slot Duration</p>
-                    <p className="text-2xl font-black text-slate-800 leading-tight">24h 30m</p>
-                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">This Week</p>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-                  <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center shrink-0">
-                    <CalendarDays className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-500 mb-0.5">Consultation Types</p>
-                    <p className="text-2xl font-black text-slate-800 leading-tight">4</p>
-                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">Configured</p>
+                  <div className="min-w-0 w-full">
+                    <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 mb-0.5 truncate">Total Slot Duration</p>
+                    <p className="text-xl sm:text-2xl font-black text-slate-800 leading-tight">24h 30m</p>
+                    <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 mt-0.5 truncate">This Week</p>
                   </div>
                 </div>
 
-                <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-                  <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center shrink-0">
-                    <Ban className="w-6 h-6 text-orange-600" />
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 shadow-sm">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 bg-purple-50 rounded-full flex items-center justify-center shrink-0">
+                    <CalendarDays className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-purple-600" />
                   </div>
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-500 mb-0.5">Blocked Slots</p>
-                    <p className="text-2xl font-black text-slate-800 leading-tight">8</p>
-                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">This Week</p>
+                  <div className="min-w-0 w-full">
+                    <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 mb-0.5 truncate">Consultation Types</p>
+                    <p className="text-xl sm:text-2xl font-black text-slate-800 leading-tight">4</p>
+                    <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 mt-0.5 truncate">Configured</p>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 shadow-sm">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 bg-orange-50 rounded-full flex items-center justify-center shrink-0">
+                    <Ban className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-orange-600" />
+                  </div>
+                  <div className="min-w-0 w-full">
+                    <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 mb-0.5 truncate">Blocked Slots</p>
+                    <p className="text-xl sm:text-2xl font-black text-slate-800 leading-tight">8</p>
+                    <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 mt-0.5 truncate">This Week</p>
                   </div>
                 </div>
               </div>
@@ -1015,7 +1027,8 @@ export default function AvailabilityScreen() {
                                           setActiveRowMenuId(null);
                                           setExemptionTargetAv(row);
                                           setExemptionSlots([]);
-                                          setExemptionDate('25 May 2025');
+                                          exemptionFormik.setFieldValue('date', '25 May 2025');
+                                          exemptionFormik.setFieldValue('reason', '');
                                         }}
                                         className="w-full text-left px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer transition-colors border-t border-slate-100 mt-1"
                                       >
@@ -1182,7 +1195,7 @@ export default function AvailabilityScreen() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             {/* Left Form Area */}
-            <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm animate-fade">
+            <div className="col-span-12 lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm animate-fade">
               
               {/* STEP 1: AVAILABILITY DETAILS */}
               {currentStep === 1 && (
@@ -1832,7 +1845,7 @@ export default function AvailabilityScreen() {
             </div>
 
             {/* Right Widgets Panel */}
-            <div className="lg:col-span-4 space-y-6 animate-fade">
+            <div className="col-span-12 lg:col-span-4 space-y-6 animate-fade">
               {/* Request to Hospital Widget */}
               {locationType === 'Hospital' && currentStep < 4 && (
                 <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3.5">

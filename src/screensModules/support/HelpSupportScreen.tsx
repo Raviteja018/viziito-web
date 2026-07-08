@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import {
   LifeBuoy,
   Search,
@@ -32,19 +34,19 @@ const FAQS = [
 
 export default function HelpSupportScreen() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [ticketSubject, setTicketSubject] = useState('');
-  const [ticketMessage, setTicketMessage] = useState('');
   const [ticketSent, setTicketSent] = useState(false);
-
-  const handleTicketSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (ticketSubject && ticketMessage) {
+  const ticketFormik = useFormik({
+    initialValues: { subject: '', message: '' },
+    validationSchema: Yup.object({
+      subject: Yup.string().required('Subject is required'),
+      message: Yup.string().required('Message is required'),
+    }),
+    onSubmit: (_values, { resetForm }) => {
       setTicketSent(true);
-      setTicketSubject('');
-      setTicketMessage('');
+      resetForm();
       setTimeout(() => setTicketSent(false), 5000);
     }
-  };
+  });
 
   return (
     <div className="w-full animate-fade space-y-8">
@@ -157,14 +159,15 @@ export default function HelpSupportScreen() {
                 <p className="text-xs text-emerald-600 mt-1">Our team will get back to you within 4 hours.</p>
               </div>
             ) : (
-              <form onSubmit={handleTicketSubmit} className="space-y-4">
+              <form onSubmit={ticketFormik.handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Subject</label>
                   <input
                     type="text"
+                    name="subject"
                     required
-                    value={ticketSubject}
-                    onChange={(e) => setTicketSubject(e.target.value)}
+                    value={ticketFormik.values.subject}
+                    onChange={ticketFormik.handleChange}
                     placeholder="Brief description of the issue"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-sm"
                   />
@@ -172,10 +175,11 @@ export default function HelpSupportScreen() {
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Message</label>
                   <textarea
+                    name="message"
                     required
                     rows={4}
-                    value={ticketMessage}
-                    onChange={(e) => setTicketMessage(e.target.value)}
+                    value={ticketFormik.values.message}
+                    onChange={ticketFormik.handleChange}
                     placeholder="Provide details about the issue..."
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-sm resize-none custom-scrollbar"
                   ></textarea>

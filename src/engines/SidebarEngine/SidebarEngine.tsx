@@ -132,19 +132,21 @@ const SidebarEngine: React.FC<SidebarEngineProps> = ({ isOpen = false, onClose }
                             onClick={onClose}
                             className={({ isActive }) =>
                                 `flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-150 group ${isActive
-                                    ? 'bg-teal-600 text-white font-semibold'
-                                    : 'text-slate-600 hover:bg-slate-50 font-medium'
+                                    ? 'bg-[#FAF1E5] text-[#F2AC4A] font-bold shadow-xs'
+                                    : 'text-[#5F6368] hover:bg-[#FDF9F6] font-medium'
                                 }`
                             }
                         >
                             {({ isActive }) => (
                                 <>
                                     <div className="flex items-center gap-3">
-                                        <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-teal-600'} transition-colors`} />
+                                        <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive 
+                                            ? 'text-[#F2AC4A]' 
+                                            : 'text-slate-400 group-hover:text-[#F2AC4A]'} transition-colors`} />
                                         <span className="text-[13px]">{t(item.name)}</span>
                                     </div>
                                     {'badge' in item && item.badge && !isActive && (
-                                        <span className="text-[10px] font-bold bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                        <span className="text-[10px] font-bold bg-[#F8DDBC] text-[#F2AC4A] px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                                             {item.badge}
                                         </span>
                                     )}
@@ -161,14 +163,14 @@ const SidebarEngine: React.FC<SidebarEngineProps> = ({ isOpen = false, onClose }
                         onClick={onClose}
                         className={({ isActive }) =>
                             `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${isActive
-                                ? 'bg-teal-600 text-white font-semibold'
-                                : 'text-slate-600 hover:bg-slate-50 font-medium'
+                                ? 'bg-[#FAF1E5] text-[#F2AC4A] font-bold shadow-xs'
+                                : 'text-[#5F6368] hover:bg-[#FDF9F6] font-medium'
                             }`
                         }
                     >
                         {({ isActive }) => (
                             <>
-                                <LifeBuoy className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-teal-600'} transition-colors`} />
+                                <LifeBuoy className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-[#F2AC4A]' : 'text-slate-400 group-hover:text-[#F2AC4A]'} transition-colors`} />
                                 <span className="text-[13px]">{t('Help & Support')}</span>
                             </>
                         )}

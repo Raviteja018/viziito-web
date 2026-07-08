@@ -15,7 +15,7 @@ const LatestReviewsWidget = () => {
           return (
             <Star
               key={i}
-              className={`w-3 h-3 ${filled || half ? 'text-amber-400 fill-amber-400' : 'text-slate-200 fill-slate-200'}`}
+              className={`w-3 h-3 ${filled || half ? 'text-[#F2AC4A] fill-[#F2AC4A]' : 'text-slate-200 fill-slate-200'}`}
             />
           );
         })}
@@ -31,7 +31,7 @@ const LatestReviewsWidget = () => {
         <h3 className="text-base font-bold text-slate-800">Latest Reviews & Ratings</h3>
         <button
           onClick={() => navigate('/reviews')}
-          className="text-xs font-semibold text-teal-600 hover:text-teal-700 transition-colors"
+          className="text-xs font-semibold text-[#F2AC4A] hover:opacity-85 transition-colors"
         >
           View all
         </button>

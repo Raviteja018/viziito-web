@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import { createPortal } from 'react-dom';
 import {
   FileText,
@@ -166,22 +168,72 @@ export default function PrescriptionsScreen() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [activeMenuRxId, setActiveMenuRxId] = useState<string | null>(null);
 
-  // Form states
-  const [selectedPatientId, setSelectedPatientId] = useState('');
-  const [diagnosis, setDiagnosis] = useState('');
-  const [rxStatus, setRxStatus] = useState<PrescriptionStatus>('Sent');
+  // Medications list builder (kept as React state - interactive array)
   const [medications, setMedications] = useState<Medication[]>([]);
 
-  // Single Medication item builder state
+  // Single Medication item builder state (kept as local React state)
   const [medName, setMedName] = useState('');
   const [medDosage, setMedDosage] = useState('');
   const [medFreq, setMedFreq] = useState('');
   const [medDur, setMedDur] = useState('');
 
-  // Import file details
+  // Import file state (File type, not serialisable by Formik)
   const [importFile, setImportFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
+
+  // Create Prescription Formik
+  const newRxFormik = useFormik({
+    initialValues: {
+      patientId: '',
+      diagnosis: '',
+      status: 'Sent' as PrescriptionStatus,
+    },
+    validationSchema: Yup.object({
+      patientId: Yup.string().required('Patient is required'),
+      diagnosis: Yup.string().required('Diagnosis is required'),
+    }),
+    onSubmit: (values, { resetForm }) => {
+      const patient = patients.find(p => p.id === values.patientId);
+      if (!patient) return;
+      const rxId = `RX-2025-${Math.floor(1000 + Math.random() * 9000)}`;
+      const newRx: Prescription = {
+        id: rxId,
+        patient: patient.name,
+        patientId: patient.id,
+        initials: patient.initials,
+        age: patient.age,
+        gender: patient.gender,
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        diagnosis: values.diagnosis,
+        status: values.status,
+        medications: medications.length > 0 ? medications : [
+          { name: 'Standard Antibiotic', dosage: '500mg', frequency: 'Once daily after food', duration: '5 Days' }
+        ]
+      };
+      const updated = [newRx, ...prescriptions];
+      syncPrescriptions(updated);
+      setSelectedRx(newRx);
+
+      const savedDetails = localStorage.getItem('vizito_patient_details');
+      if (savedDetails) {
+        try {
+          const detailsDict = JSON.parse(savedDetails);
+          if (detailsDict[patient.id]) {
+            detailsDict[patient.id].totalPrescriptions += 1;
+            localStorage.setItem('vizito_patient_details', JSON.stringify(detailsDict));
+          }
+        } catch (err) { }
+      }
+
+      setIsNewModalOpen(false);
+      setMedications([]);
+      setMedName(''); setMedDosage(''); setMedFreq(''); setMedDur('');
+      resetForm();
+      showToast(`Prescription ${rxId} created successfully.`);
+    }
+  });
 
   // Toast
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
@@ -309,66 +361,6 @@ export default function PrescriptionsScreen() {
     setMedications(prev => prev.filter((_, idx) => idx !== index));
   };
 
-  // Submit new prescription
-  const handleNewRxSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPatientId || !diagnosis) {
-      showToast('Please select a patient and enter a diagnosis.', 'error');
-      return;
-    }
-
-    const patient = patients.find(p => p.id === selectedPatientId);
-    if (!patient) return;
-
-    const rxId = `RX-2025-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const newRx: Prescription = {
-      id: rxId,
-      patient: patient.name,
-      patientId: patient.id,
-      initials: patient.initials,
-      age: patient.age,
-      gender: patient.gender,
-      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      diagnosis,
-      status: rxStatus,
-      medications: medications.length > 0 ? medications : [
-        { name: 'Standard Antibiotic', dosage: '500mg', frequency: 'Once daily after food', duration: '5 Days' }
-      ]
-    };
-
-    const updated = [newRx, ...prescriptions];
-    syncPrescriptions(updated);
-    setSelectedRx(newRx);
-
-    // Increment patient prescription counts in localStorage if detail exists
-    const savedDetails = localStorage.getItem('vizito_patient_details');
-    if (savedDetails) {
-      try {
-        const detailsDict = JSON.parse(savedDetails);
-        if (detailsDict[patient.id]) {
-          detailsDict[patient.id].totalPrescriptions += 1;
-          localStorage.setItem('vizito_patient_details', JSON.stringify(detailsDict));
-        }
-      } catch (err) { }
-    }
-
-    setIsNewModalOpen(false);
-    resetNewForm();
-    showToast(`Prescription ${rxId} created successfully.`);
-  };
-
-  const resetNewForm = () => {
-    setSelectedPatientId('');
-    setDiagnosis('');
-    setRxStatus('Sent');
-    setMedications([]);
-    setMedName('');
-    setMedDosage('');
-    setMedFreq('');
-    setMedDur('');
-  };
 
   // Delete Prescription
   const handleDeleteRxConfirm = () => {
@@ -459,22 +451,22 @@ export default function PrescriptionsScreen() {
       )}
 
       {/* ─── Page Header ──────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4 mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800">Prescription Management</h1>
           <p className="text-slate-500 text-sm mt-0.5">Create, view and manage patient prescriptions</p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto shrink-0">
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all cursor-pointer whitespace-nowrap"
           >
             <Download className="w-4 h-4" />
             Import Prescription
           </button>
           <button
-            onClick={() => { resetNewForm(); setIsNewModalOpen(true); }}
-            className="btn btn-primary flex items-center gap-2 px-5 py-2.5 shadow-md shadow-teal-500/20 text-sm cursor-pointer"
+            onClick={() => { newRxFormik.resetForm(); setMedications([]); setMedName(''); setMedDosage(''); setMedFreq(''); setMedDur(''); setIsNewModalOpen(true); }}
+            className="flex-1 sm:flex-none btn btn-primary flex items-center justify-center gap-2 px-5 py-2.5 shadow-md shadow-teal-500/20 text-sm font-bold cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             New Prescription
@@ -486,16 +478,16 @@ export default function PrescriptionsScreen() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
         {/* ── Left: Table panel ──────────────────────────────────────────── */}
-        <div className="lg:col-span-8">
+        <div className="col-span-12 lg:col-span-8">
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
 
             {/* Tabs */}
-            <div className="flex items-center border-b border-slate-100 px-4 pt-1">
+            <div className="flex items-center border-b border-slate-100 px-4 pt-1 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
               {tabs.map(tab => (
                 <button
                   key={tab}
                   onClick={() => { setActiveTab(tab); setCurrentPage(1); }}
-                  className={`relative px-4 py-3 text-sm font-semibold transition-colors whitespace-nowrap cursor-pointer ${activeTab === tab
+                  className={`relative shrink-0 px-4 py-3 text-sm font-semibold transition-colors whitespace-nowrap cursor-pointer ${activeTab === tab
                       ? 'text-teal-700'
                       : 'text-slate-500 hover:text-slate-800'
                     }`}
@@ -587,7 +579,7 @@ export default function PrescriptionsScreen() {
             </div>
 
             {/* Table header */}
-            <div className="grid grid-cols-12 gap-2 px-5 py-2.5 bg-slate-50 border-b border-slate-100">
+            <div className="hidden md:grid grid-cols-12 gap-2 px-5 py-2.5 bg-slate-50 border-b border-slate-100">
               {['Prescription ID', 'Patient Details', 'Date', 'Diagnosis', 'Status', 'Actions'].map((col, i) => (
                 <div
                   key={col}
@@ -616,43 +608,53 @@ export default function PrescriptionsScreen() {
                   <div
                     key={rx.id}
                     onClick={() => setSelectedRx(rx)}
-                    className={`grid grid-cols-12 gap-2 px-5 py-3.5 items-center cursor-pointer transition-colors group relative ${selectedRx?.id === rx.id
+                    className={`flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-2 px-5 py-4 md:py-3.5 items-start md:items-center cursor-pointer transition-colors group relative ${selectedRx?.id === rx.id
                         ? 'bg-teal-50/60 border-l-2 border-l-teal-500'
                         : 'hover:bg-slate-50/80 border-l-2 border-l-transparent'
                       }`}
                   >
                     {/* ID */}
-                    <div className="col-span-2">
+                    <div className="hidden md:block md:col-span-2">
                       <span className="text-xs font-mono font-semibold text-slate-600">{rx.id}</span>
                     </div>
 
                     {/* Patient */}
-                    <div className="col-span-3 flex items-center gap-2.5 min-w-0">
-                      <Avatar initials={rx.initials} size="sm" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-slate-800 truncate">{rx.patient}</p>
-                        <p className="text-[11px] text-slate-400">{rx.age} Y · {rx.patientId}</p>
+                    <div className="col-span-12 md:col-span-3 flex items-center justify-between md:justify-start w-full gap-2.5 min-w-0">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Avatar initials={rx.initials} size="sm" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-slate-800 truncate">{rx.patient}</p>
+                          <p className="text-[11px] text-slate-400">{rx.age} Y · {rx.patientId} <span className="md:hidden font-mono text-slate-400">· {rx.id}</span></p>
+                        </div>
+                      </div>
+                      <div className="md:hidden">
+                        <StatusBadge status={rx.status} />
                       </div>
                     </div>
 
                     {/* Date */}
-                    <div className="col-span-2">
-                      <p className="text-xs font-semibold text-slate-700">{rx.date}</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">{rx.time}</p>
+                    <div className="col-span-12 md:col-span-2 flex items-center justify-between md:block w-full border-t border-slate-100 md:border-none pt-2.5 md:pt-0">
+                      <span className="md:hidden text-[11px] font-bold text-slate-400 uppercase tracking-wider">Date</span>
+                      <div className="text-right md:text-left">
+                        <p className="text-xs font-semibold text-slate-700">{rx.date}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{rx.time}</p>
+                      </div>
                     </div>
 
                     {/* Diagnosis */}
-                    <div className="col-span-2">
-                      <p className="text-xs font-semibold text-slate-700 leading-snug truncate">{rx.diagnosis}</p>
+                    <div className="col-span-12 md:col-span-2 flex items-center justify-between md:block w-full border-t border-slate-100 md:border-none pt-2.5 md:pt-0">
+                      <span className="md:hidden text-[11px] font-bold text-slate-400 uppercase tracking-wider">Diagnosis</span>
+                      <p className="text-xs font-semibold text-slate-700 leading-snug truncate max-w-[200px] md:max-w-none text-right md:text-left">{rx.diagnosis}</p>
                     </div>
 
                     {/* Status */}
-                    <div className="col-span-2">
+                    <div className="hidden md:block md:col-span-2">
                       <StatusBadge status={rx.status} />
                     </div>
 
                     {/* Actions */}
-                    <div className="col-span-1 flex items-center justify-end gap-1 relative">
+                    <div className="col-span-12 md:col-span-1 flex items-center justify-end w-full md:w-auto gap-1 border-t border-slate-100 md:border-none pt-2.5 md:pt-0 mt-1 md:mt-0 relative">
+                      <span className="md:hidden mr-auto text-[11px] font-bold text-slate-400 uppercase tracking-wider">Actions</span>
                       <button
                         className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
                         title="View Prescription"
@@ -742,7 +744,7 @@ export default function PrescriptionsScreen() {
         </div>
 
         {/* ── Right: Detail sidebar ───────────────────────────────────────── */}
-        <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-5">
+        <div className="col-span-12 lg:col-span-4 space-y-4 lg:sticky lg:top-5">
 
           {/* Patient Summary */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
@@ -895,7 +897,7 @@ export default function PrescriptionsScreen() {
           onClick={() => setIsNewModalOpen(false)}
         >
           <div
-            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto modal-scrollbar animate-fade"
+            className="bg-white rounded-2xl max-w-2xl w-[95%] sm:w-full p-5 sm:p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto modal-scrollbar animate-fade"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -908,13 +910,14 @@ export default function PrescriptionsScreen() {
               </button>
             </div>
 
-            <form onSubmit={handleNewRxSubmit} className="space-y-4">
+            <form onSubmit={newRxFormik.handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="form-group">
                   <label className="form-label">Select Patient *</label>
                   <select
-                    value={selectedPatientId}
-                    onChange={e => setSelectedPatientId(e.target.value)}
+                    name="patientId"
+                    value={newRxFormik.values.patientId}
+                    onChange={newRxFormik.handleChange}
                     className="form-control cursor-pointer"
                     required
                   >
@@ -928,8 +931,9 @@ export default function PrescriptionsScreen() {
                   <label className="form-label">Diagnosis *</label>
                   <input
                     type="text"
-                    value={diagnosis}
-                    onChange={e => setDiagnosis(e.target.value)}
+                    name="diagnosis"
+                    value={newRxFormik.values.diagnosis}
+                    onChange={newRxFormik.handleChange}
                     placeholder="e.g. Acute Bronchitis"
                     className="form-control"
                     required
@@ -1030,9 +1034,10 @@ export default function PrescriptionsScreen() {
                     <label className="inline-flex items-center text-xs font-semibold text-slate-700 cursor-pointer">
                       <input
                         type="radio"
-                        name="rxStatus"
-                        checked={rxStatus === 'Sent'}
-                        onChange={() => setRxStatus('Sent')}
+                        name="status"
+                        value="Sent"
+                        checked={newRxFormik.values.status === 'Sent'}
+                        onChange={newRxFormik.handleChange}
                         className="mr-1.5 text-teal-600 focus:ring-teal-500"
                       />
                       Sent (Active)
@@ -1040,9 +1045,10 @@ export default function PrescriptionsScreen() {
                     <label className="inline-flex items-center text-xs font-semibold text-slate-700 cursor-pointer">
                       <input
                         type="radio"
-                        name="rxStatus"
-                        checked={rxStatus === 'Draft'}
-                        onChange={() => setRxStatus('Draft')}
+                        name="status"
+                        value="Draft"
+                        checked={newRxFormik.values.status === 'Draft'}
+                        onChange={newRxFormik.handleChange}
                         className="mr-1.5 text-teal-600 focus:ring-teal-500"
                       />
                       Draft
@@ -1074,15 +1080,15 @@ export default function PrescriptionsScreen() {
       {/* VIEW PRESCRIPTION RX PAD MODAL */}
       {isViewRxModalOpen && selectedRx && createPortal(
         <div
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 print:bg-transparent print:backdrop-blur-none print:p-0 print:relative print:block print:z-0"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-0 sm:p-4 print:bg-transparent print:backdrop-blur-none print:p-0 print:relative print:block print:z-0"
           onClick={() => setIsViewRxModalOpen(false)}
         >
           <div
-            className="bg-white rounded-2xl max-w-2xl w-full p-0 shadow-2xl border border-slate-150 overflow-hidden animate-fade print:max-w-full print:border-none print:shadow-none print:rounded-none print:m-0 print:p-0"
+            className="bg-white rounded-none sm:rounded-2xl max-w-2xl w-full h-full sm:h-auto p-0 shadow-2xl border-none sm:border border-slate-150 overflow-hidden animate-fade flex flex-col print:max-w-full print:border-none print:shadow-none print:rounded-none print:m-0 print:p-0"
             onClick={e => e.stopPropagation()}
           >
             {/* Header controls */}
-            <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center justify-between print:hidden">
+            <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center justify-between print:hidden shrink-0">
               <span className="text-xs font-bold text-slate-600">Prescription View: {selectedRx.id}</span>
               <div className="flex items-center gap-2">
                 <button
@@ -1101,7 +1107,7 @@ export default function PrescriptionsScreen() {
             </div>
 
             {/* The Rx Pad */}
-            <div className="p-8 bg-white text-slate-800 print:p-6 print:pt-12" id="rx-pad-print-area">
+            <div className="flex-1 p-5 sm:p-8 bg-white text-slate-800 print:p-6 print:pt-12 overflow-y-auto modal-scrollbar" id="rx-pad-print-area">
 
               {/* Doctor details */}
               <div className="flex justify-between items-start border-b-2 border-slate-200 pb-4 mb-6">
@@ -1231,7 +1237,7 @@ export default function PrescriptionsScreen() {
           onClick={() => setIsImportModalOpen(false)}
         >
           <div
-            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade"
+            className="bg-white rounded-2xl max-w-md w-[95%] sm:w-full p-5 sm:p-6 shadow-2xl border border-slate-100 animate-fade"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">

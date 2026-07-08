@@ -10,10 +10,10 @@ import { Plus, UserPlus, FileText, CalendarX2, BarChart2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const quickActions = [
-  { icon: UserPlus, label: 'Add Patient', color: 'bg-teal-50 text-teal-700', onClick: '/patients' },
-  { icon: FileText, label: 'Create Prescription', color: 'bg-blue-50 text-blue-700', onClick: '/prescriptions' },
-  { icon: CalendarX2, label: 'Block Slots', color: 'bg-purple-50 text-purple-700', onClick: '/availability' },
-  { icon: BarChart2, label: 'View Reports', color: 'bg-amber-50 text-amber-700', onClick: '/revenue' },
+  { icon: UserPlus, label: 'Add Patient', color: 'bg-[#FFF5F2] text-[#FF7F4D]', onClick: '/patients' },
+  { icon: FileText, label: 'Create Prescription', color: 'bg-[#FFFBEB] text-[#F2AC4A]', onClick: '/prescriptions' },
+  { icon: CalendarX2, label: 'Block Slots', color: 'bg-[#FFF5F2] text-[#FF7F4D]', onClick: '/availability' },
+  { icon: BarChart2, label: 'View Reports', color: 'bg-[#FFFBEB] text-[#F2AC4A]', onClick: '/revenue' },
 ];
 
 const DoctorDashboardEngine = () => {
@@ -22,16 +22,16 @@ const DoctorDashboardEngine = () => {
   return (
     <div className="space-y-5">
       {/* Greeting Header + Clinic Selector + Create Appointment */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-800">Good Morning, Dr. Arjun 👋</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Here's what's happening with your practice today.</p>
+          <h1 className="text-2xl font-extrabold text-[#2B2B2B]">Good Morning, Dr. Arjun 👋</h1>
+          <p className="text-sm text-[#5F6368] mt-0.5">Here's what's happening with your practice today.</p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-3 shrink-0 w-full md:w-auto">
           <ClinicSelector />
           <button
             onClick={() => navigate('/appointments/create')}
-            className="flex items-center gap-2 bg-teal-700 hover:bg-teal-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm shadow-teal-700/20 transition-all active:scale-95 whitespace-nowrap"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-[#FF7F4D] to-[#F2AC4A] hover:opacity-95 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm shadow-orange-500/10 transition-all active:scale-95 whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             Create Appointment
@@ -48,17 +48,17 @@ const DoctorDashboardEngine = () => {
       {/* Main 3-column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Today's Appointments — col 5 */}
-        <div className="lg:col-span-5 min-h-[420px]">
+        <div className="lg:col-span-5 min-h-[420px] w-full">
           <TodayAppointmentsList />
         </div>
 
         {/* Revenue Overview — col 4 */}
-        <div className="lg:col-span-4 min-h-[420px]">
+        <div className="lg:col-span-4 min-h-[420px] w-full">
           <RevenueOverviewWidget />
         </div>
 
         {/* Latest Reviews — col 3 */}
-        <div className="lg:col-span-3 min-h-[420px]">
+        <div className="lg:col-span-3 min-h-[420px] w-full">
           <LatestReviewsWidget />
         </div>
       </div>
@@ -66,28 +66,28 @@ const DoctorDashboardEngine = () => {
       {/* Bottom row: Upcoming Schedule + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Upcoming Schedule */}
-        <div className="lg:col-span-7">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
-            <h3 className="text-base font-bold text-slate-800 mb-4">Upcoming Schedule</h3>
-            <div className="grid grid-cols-7 gap-2">
+        <div className="lg:col-span-7 w-full">
+          <div className="bg-white border border-[#DEDFE0] rounded-2xl shadow-sm p-5">
+            <h3 className="text-base font-bold text-[#2B2B2B] mb-4">Upcoming Schedule</h3>
+            <div className="flex overflow-x-auto lg:grid lg:grid-cols-7 gap-2 pb-2 lg:pb-0" style={{ scrollbarWidth: 'none' }}>
               {MOCK_UPCOMING_SCHEDULE.map((day) => (
                 <button
                   key={day.day}
-                  className={`flex flex-col items-center p-2.5 rounded-xl transition-all ${
+                  className={`flex flex-col items-center p-2.5 rounded-xl transition-all shrink-0 min-w-[56px] lg:min-w-0 ${
                     day.isToday
-                      ? 'bg-teal-700 text-white shadow-sm'
-                      : 'hover:bg-slate-50 text-slate-600'
+                      ? 'bg-gradient-to-br from-[#FF7F4D] to-[#F2AC4A] text-white shadow-sm'
+                      : 'hover:bg-slate-50 text-slate-600 border border-transparent hover:border-slate-100'
                   }`}
                 >
-                  <span className={`text-[11px] font-semibold ${day.isToday ? 'text-teal-200' : 'text-slate-400'}`}>
+                  <span className={`text-[11px] font-semibold ${day.isToday ? 'text-[#F8DDBC]' : 'text-slate-400'}`}>
                     {day.day}
                   </span>
-                  <span className={`text-sm font-bold mt-0.5 ${day.isToday ? 'text-white' : 'text-slate-700'}`}>
+                  <span className={`text-sm font-bold mt-0.5 ${day.isToday ? 'text-white' : 'text-[#2B2B2B]'}`}>
                     {day.date}
                   </span>
                   {day.appointments > 0 && (
                     <span className={`text-[10px] font-bold mt-1.5 px-1.5 py-0.5 rounded-full ${
-                      day.isToday ? 'bg-white/20 text-white' : 'bg-teal-50 text-teal-700'
+                      day.isToday ? 'bg-white/20 text-white' : 'bg-[#FFF5F2] text-[#FF7F4D]'
                     }`}>
                       {day.appointments}
                     </span>
@@ -99,10 +99,10 @@ const DoctorDashboardEngine = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-5 w-full">
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
             <h3 className="text-base font-bold text-slate-800 mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (

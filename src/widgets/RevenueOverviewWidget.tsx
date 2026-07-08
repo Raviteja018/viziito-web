@@ -65,7 +65,7 @@ const RevenueOverviewWidget = () => {
             <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">
               ₹{MOCK_REVENUE.totalRevenue.toLocaleString('en-IN')}
             </h2>
-            <div className="flex items-center gap-1 mb-1 text-emerald-600 text-[11px] font-bold">
+            <div className="flex items-center gap-1 mb-1 text-[#54BC88] text-[11px] font-bold">
               <TrendingUp className="w-3 h-3" />
               <span>{MOCK_REVENUE.trend} vs last month</span>
             </div>
@@ -77,16 +77,16 @@ const RevenueOverviewWidget = () => {
           <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 80 }} preserveAspectRatio="none">
             <defs>
               <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#0d9488" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#0d9488" stopOpacity="0" />
+                <stop offset="0%" stopColor="#FF7F4D" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="#FF7F4D" stopOpacity="0" />
               </linearGradient>
             </defs>
             {/* Area fill */}
             <path d={areaD} fill="url(#revenueGradient)" />
             {/* Line */}
-            <path d={pathD} fill="none" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={pathD} fill="none" stroke="#FF7F4D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             {/* Last point dot */}
-            <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="3.5" fill="#0d9488" />
+            <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="3.5" fill="#FF7F4D" />
           </svg>
 
           {/* X-axis labels */}
@@ -99,18 +99,18 @@ const RevenueOverviewWidget = () => {
 
         {/* Bottom Stats */}
         <div className="flex items-center gap-3 pb-4">
-          <div className="flex items-center gap-2 bg-teal-50 rounded-xl px-3 py-2 flex-1">
-            <div className="w-6 h-6 bg-teal-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-3.5 h-3.5 text-teal-600" />
+          <div className="flex items-center gap-2 bg-[#FFF5F2] rounded-xl px-3 py-2 flex-1">
+            <div className="w-6 h-6 bg-[#F8DDBC]/40 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-3.5 h-3.5 text-[#FF7F4D]" />
             </div>
             <div>
               <p className="text-[10px] text-slate-500 font-medium">Net Earnings</p>
               <p className="text-sm font-extrabold text-slate-800">₹{MOCK_REVENUE.netEarnings.toLocaleString('en-IN')}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 bg-blue-50 rounded-xl px-3 py-2 flex-1">
-            <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Users className="w-3.5 h-3.5 text-blue-600" />
+          <div className="flex items-center gap-2 bg-[#FFFBEB] rounded-xl px-3 py-2 flex-1">
+            <div className="w-6 h-6 bg-[#F2C78D]/30 rounded-lg flex items-center justify-center">
+              <Users className="w-3.5 h-3.5 text-[#F2AC4A]" />
             </div>
             <div>
               <p className="text-[10px] text-slate-500 font-medium">Consultations</p>
@@ -123,7 +123,7 @@ const RevenueOverviewWidget = () => {
       {/* Footer Button */}
       <button
         onClick={() => navigate('/revenue')}
-        className="w-full border-t border-slate-100 py-3 text-sm font-semibold text-teal-600 hover:bg-teal-50 transition-colors"
+        className="w-full border-t border-slate-100 py-3 text-sm font-semibold text-[#FF7F4D] hover:bg-[#FFF5F2] transition-colors"
       >
         View Revenue Details
       </button>

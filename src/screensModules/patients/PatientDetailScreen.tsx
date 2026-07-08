@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import {
   ArrowLeft, Pencil, MoreVertical,
   Phone, Mail, MapPin, User, Calendar, Droplet,
@@ -183,19 +185,46 @@ export default function PatientDetailScreen() {
   const [selectedRx, setSelectedRx] = useState<any>(null);
   const [isCreateRxModalOpen, setIsCreateRxModalOpen] = useState(false);
 
-  // Forms state
-  const [editForm, setEditForm] = useState({
-    name: '', dob: '', gender: 'Male', phone: '', email: '',
-    address: '', bloodGroup: 'B+', height: '', weight: '',
-    allergies: 'None', maritalStatus: 'Single', emergencyName: '', emergencyPhone: ''
+  // Forms state via Formik
+  const editFormik = useFormik({
+    initialValues: {
+      name: '', dob: '', gender: 'Male', phone: '', email: '',
+      address: '', bloodGroup: 'B+', height: '', weight: '',
+      allergies: 'None', maritalStatus: 'Single', emergencyName: '', emergencyPhone: ''
+    },
+    validationSchema: Yup.object({
+      name: Yup.string().required('Name is required'),
+      phone: Yup.string().required('Phone is required')
+    }),
+    onSubmit: (values) => {
+      handleEditSubmit(values);
+    }
   });
 
-  const [apptForm, setApptForm] = useState({
-    date: '', time: '', type: 'In-Clinic Consultation', reason: ''
+  const apptFormik = useFormik({
+    initialValues: {
+      date: '', time: '', type: 'In-Clinic Consultation', reason: ''
+    },
+    validationSchema: Yup.object({
+      date: Yup.string().required('Date is required'),
+      time: Yup.string().required('Time is required')
+    }),
+    onSubmit: (values) => {
+      handleApptSubmit(values);
+    }
   });
 
-  // Prescription builder state
-  const [rxDiagnosis, setRxDiagnosis] = useState('');
+  const rxFormik = useFormik({
+    initialValues: {
+      diagnosis: ''
+    },
+    validationSchema: Yup.object({
+      diagnosis: Yup.string().required('Diagnosis is required')
+    }),
+    onSubmit: (values) => {
+      handleCreateRxSubmit(values);
+    }
+  });
   const [rxMeds, setRxMeds] = useState<{ name: string; dosage: string; frequency: string; duration: string }[]>([]);
   const [newMedName, setNewMedName] = useState('');
   const [newMedDosage, setNewMedDosage] = useState('');
@@ -314,7 +343,7 @@ export default function PatientDetailScreen() {
   // Handle opening edit profile modal
   const handleOpenEdit = () => {
     if (!patient) return;
-    setEditForm({
+    editFormik.setValues({
       name: patient.name,
       dob: patient.dob,
       gender: patient.gender,
@@ -333,30 +362,29 @@ export default function PatientDetailScreen() {
   };
 
   // Submit edit profile
-  const handleEditSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEditSubmit = (values: any) => {
     if (!patient) return;
 
-    const names = editForm.name.trim().split(' ');
+    const names = values.name.trim().split(' ');
     const initials = names.length > 1 ? (names[0][0] + names[names.length - 1][0]).toUpperCase() : names[0][0].toUpperCase();
 
     const updatedPatient: PatientData = {
       ...patient,
-      name: editForm.name,
-      dob: editForm.dob,
-      gender: editForm.gender,
+      name: values.name,
+      dob: values.dob,
+      gender: values.gender,
       initials,
-      phone: editForm.phone,
-      email: editForm.email,
-      address: editForm.address,
-      bloodGroup: editForm.bloodGroup,
-      height: `${editForm.height} cm`,
-      weight: `${editForm.weight} kg`,
-      allergies: editForm.allergies,
-      maritalStatus: editForm.maritalStatus,
+      phone: values.phone,
+      email: values.email,
+      address: values.address,
+      bloodGroup: values.bloodGroup,
+      height: `${values.height} cm`,
+      weight: `${values.weight} kg`,
+      allergies: values.allergies,
+      maritalStatus: values.maritalStatus,
       emergency: {
-        name: editForm.emergencyName,
-        phone: editForm.emergencyPhone
+        name: values.emergencyName,
+        phone: values.emergencyPhone
       }
     };
 
@@ -381,11 +409,11 @@ export default function PatientDetailScreen() {
           if (p.id === activeId) {
             return {
               ...p,
-              name: editForm.name,
+              name: values.name,
               initials,
-              phone: editForm.phone,
-              email: editForm.email,
-              gender: editForm.gender
+              phone: values.phone,
+              email: values.email,
+              gender: values.gender
             };
           }
           return p;
@@ -399,21 +427,15 @@ export default function PatientDetailScreen() {
   };
 
   // Submit new appointment
-  const handleApptSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!apptForm.date || !apptForm.time) {
-      showToast('Please specify date and time.', 'error');
-      return;
-    }
-
+  const handleApptSubmit = (values: any) => {
     const newAppt: Appointment = {
       id: `APT-${Math.floor(10000 + Math.random() * 90000)}`,
-      date: new Date(apptForm.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      time: apptForm.time,
-      type: apptForm.type,
+      date: new Date(values.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      time: values.time,
+      type: values.type,
       doctor: 'Dr. Arjun Reddy',
       status: 'Upcoming',
-      reason: apptForm.reason || 'Regular medical checkup'
+      reason: values.reason || 'Regular medical checkup'
     };
 
     const updated = [newAppt, ...appointments];
@@ -438,7 +460,7 @@ export default function PatientDetailScreen() {
     }
 
     setIsApptModalOpen(false);
-    setApptForm({ date: '', time: '', type: 'In-Clinic Consultation', reason: '' });
+    apptFormik.resetForm();
     showToast('New appointment scheduled successfully.');
   };
 
@@ -496,13 +518,7 @@ export default function PatientDetailScreen() {
   };
 
   // Submit prescription modal
-  const handleCreateRxSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!rxDiagnosis) {
-      showToast('Diagnosis is required.', 'error');
-      return;
-    }
-
+  const handleCreateRxSubmit = (values: any) => {
     const rxId = `RX-2025-${Math.floor(1000 + Math.random() * 9000)}`;
     const rxDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const rxTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -511,7 +527,7 @@ export default function PatientDetailScreen() {
     const newRxItem: PrescriptionItem = {
       id: rxId,
       date: rxDate,
-      diagnosis: rxDiagnosis,
+      diagnosis: values.diagnosis,
       medications: rxMeds.map(m => m.name),
       status: 'Sent'
     };
@@ -532,7 +548,7 @@ export default function PatientDetailScreen() {
       gender: patient?.gender || 'Male',
       date: rxDate,
       time: rxTime,
-      diagnosis: rxDiagnosis,
+      diagnosis: values.diagnosis,
       status: 'Sent',
       medications: rxMeds.length > 0 ? rxMeds : [{ name: 'Standard Antibiotics', dosage: '500mg', frequency: 'Once daily', duration: '5 Days' }]
     };
@@ -557,7 +573,7 @@ export default function PatientDetailScreen() {
     }
 
     setIsCreateRxModalOpen(false);
-    setRxDiagnosis('');
+    rxFormik.resetForm();
     setRxMeds([]);
     showToast(`Prescription ${rxId} generated successfully.`);
   };
@@ -1032,14 +1048,15 @@ export default function PatientDetailScreen() {
               </button>
             </div>
 
-            <form onSubmit={handleEditSubmit} className="space-y-4">
+            <form onSubmit={editFormik.handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="form-group">
                   <label className="form-label">Full Name *</label>
                   <input
                     type="text"
-                    value={editForm.name}
-                    onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                    name="name"
+                    value={editFormik.values.name}
+                    onChange={editFormik.handleChange}
                     className="form-control"
                     required
                   />
@@ -1048,8 +1065,9 @@ export default function PatientDetailScreen() {
                   <label className="form-label">Phone Number *</label>
                   <input
                     type="text"
-                    value={editForm.phone}
-                    onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+                    name="phone"
+                    value={editFormik.values.phone}
+                    onChange={editFormik.handleChange}
                     className="form-control"
                     required
                   />
@@ -1058,8 +1076,9 @@ export default function PatientDetailScreen() {
                   <label className="form-label">Email Address</label>
                   <input
                     type="email"
-                    value={editForm.email}
-                    onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                    name="email"
+                    value={editFormik.values.email}
+                    onChange={editFormik.handleChange}
                     className="form-control"
                   />
                 </div>
@@ -1068,8 +1087,9 @@ export default function PatientDetailScreen() {
                     <label className="form-label">Date of Birth</label>
                     <input
                       type="text"
-                      value={editForm.dob}
-                      onChange={e => setEditForm({ ...editForm, dob: e.target.value })}
+                      name="dob"
+                      value={editFormik.values.dob}
+                      onChange={editFormik.handleChange}
                       placeholder="e.g. 15 Jan 1993"
                       className="form-control"
                     />
@@ -1077,8 +1097,9 @@ export default function PatientDetailScreen() {
                   <div className="form-group">
                     <label className="form-label">Gender</label>
                     <select
-                      value={editForm.gender}
-                      onChange={e => setEditForm({ ...editForm, gender: e.target.value })}
+                      name="gender"
+                      value={editFormik.values.gender}
+                      onChange={editFormik.handleChange}
                       className="form-control cursor-pointer"
                     >
                       <option value="Male">Male</option>
@@ -1092,8 +1113,9 @@ export default function PatientDetailScreen() {
                   <div className="form-group">
                     <label className="form-label">Blood Group</label>
                     <select
-                      value={editForm.bloodGroup}
-                      onChange={e => setEditForm({ ...editForm, bloodGroup: e.target.value })}
+                      name="bloodGroup"
+                      value={editFormik.values.bloodGroup}
+                      onChange={editFormik.handleChange}
                       className="form-control cursor-pointer"
                     >
                       {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => (
@@ -1105,8 +1127,9 @@ export default function PatientDetailScreen() {
                     <label className="form-label">Height (cm)</label>
                     <input
                       type="text"
-                      value={editForm.height}
-                      onChange={e => setEditForm({ ...editForm, height: e.target.value })}
+                      name="height"
+                      value={editFormik.values.height}
+                      onChange={editFormik.handleChange}
                       className="form-control"
                     />
                   </div>
@@ -1114,8 +1137,9 @@ export default function PatientDetailScreen() {
                     <label className="form-label">Weight (kg)</label>
                     <input
                       type="text"
-                      value={editForm.weight}
-                      onChange={e => setEditForm({ ...editForm, weight: e.target.value })}
+                      name="weight"
+                      value={editFormik.values.weight}
+                      onChange={editFormik.handleChange}
                       className="form-control"
                     />
                   </div>
@@ -1124,8 +1148,9 @@ export default function PatientDetailScreen() {
                 <div className="form-group">
                   <label className="form-label">Marital Status</label>
                   <select
-                    value={editForm.maritalStatus}
-                    onChange={e => setEditForm({ ...editForm, maritalStatus: e.target.value })}
+                    name="maritalStatus"
+                    value={editFormik.values.maritalStatus}
+                    onChange={editFormik.handleChange}
                     className="form-control cursor-pointer"
                   >
                     <option value="Single">Single</option>
@@ -1140,8 +1165,9 @@ export default function PatientDetailScreen() {
                 <label className="form-label">Address</label>
                 <input
                   type="text"
-                  value={editForm.address}
-                  onChange={e => setEditForm({ ...editForm, address: e.target.value })}
+                  name="address"
+                  value={editFormik.values.address}
+                  onChange={editFormik.handleChange}
                   className="form-control"
                 />
               </div>
@@ -1150,8 +1176,9 @@ export default function PatientDetailScreen() {
                 <label className="form-label">Known Allergies</label>
                 <input
                   type="text"
-                  value={editForm.allergies}
-                  onChange={e => setEditForm({ ...editForm, allergies: e.target.value })}
+                  name="allergies"
+                  value={editFormik.values.allergies}
+                  onChange={editFormik.handleChange}
                   className="form-control"
                 />
               </div>
@@ -1163,8 +1190,9 @@ export default function PatientDetailScreen() {
                     <label className="form-label">Contact Name</label>
                     <input
                       type="text"
-                      value={editForm.emergencyName}
-                      onChange={e => setEditForm({ ...editForm, emergencyName: e.target.value })}
+                      name="emergencyName"
+                      value={editFormik.values.emergencyName}
+                      onChange={editFormik.handleChange}
                       className="form-control"
                     />
                   </div>
@@ -1172,8 +1200,9 @@ export default function PatientDetailScreen() {
                     <label className="form-label">Contact Phone</label>
                     <input
                       type="text"
-                      value={editForm.emergencyPhone}
-                      onChange={e => setEditForm({ ...editForm, emergencyPhone: e.target.value })}
+                      name="emergencyPhone"
+                      value={editFormik.values.emergencyPhone}
+                      onChange={editFormik.handleChange}
                       className="form-control"
                     />
                   </div>
@@ -1217,13 +1246,14 @@ export default function PatientDetailScreen() {
               </button>
             </div>
 
-            <form onSubmit={apptSubmit => handleApptSubmit(apptSubmit)} className="space-y-4">
+            <form onSubmit={apptFormik.handleSubmit} className="space-y-4">
               <div className="form-group">
                 <label className="form-label">Date *</label>
                 <input
                   type="date"
-                  value={apptForm.date}
-                  onChange={e => setApptForm({ ...apptForm, date: e.target.value })}
+                  name="date"
+                  value={apptFormik.values.date}
+                  onChange={apptFormik.handleChange}
                   className="form-control"
                   required
                 />
@@ -1233,8 +1263,9 @@ export default function PatientDetailScreen() {
                 <label className="form-label">Time Slot *</label>
                 <input
                   type="text"
-                  value={apptForm.time}
-                  onChange={e => setApptForm({ ...apptForm, time: e.target.value })}
+                  name="time"
+                  value={apptFormik.values.time}
+                  onChange={apptFormik.handleChange}
                   placeholder="e.g. 10:30 AM - 11:00 AM"
                   className="form-control"
                   required
@@ -1244,8 +1275,9 @@ export default function PatientDetailScreen() {
               <div className="form-group">
                 <label className="form-label">Consultation Type</label>
                 <select
-                  value={apptForm.type}
-                  onChange={e => setApptForm({ ...apptForm, type: e.target.value })}
+                  name="type"
+                  value={apptFormik.values.type}
+                  onChange={apptFormik.handleChange}
                   className="form-control cursor-pointer"
                 >
                   <option value="In-Clinic Consultation">In-Clinic Consultation</option>
@@ -1258,8 +1290,9 @@ export default function PatientDetailScreen() {
                 <label className="form-label">Reason for Visit</label>
                 <input
                   type="text"
-                  value={apptForm.reason}
-                  onChange={e => setApptForm({ ...apptForm, reason: e.target.value })}
+                  name="reason"
+                  value={apptFormik.values.reason}
+                  onChange={apptFormik.handleChange}
                   placeholder="e.g. Regular medical follow-up"
                   className="form-control"
                 />
@@ -1302,13 +1335,14 @@ export default function PatientDetailScreen() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateRxSubmit} className="space-y-4">
+            <form onSubmit={rxFormik.handleSubmit} className="space-y-4">
               <div className="form-group">
                 <label className="form-label">Diagnosis / Impression *</label>
                 <input
                   type="text"
-                  value={rxDiagnosis}
-                  onChange={e => setRxDiagnosis(e.target.value)}
+                  name="diagnosis"
+                  value={rxFormik.values.diagnosis}
+                  onChange={rxFormik.handleChange}
                   placeholder="e.g. Hypertension control"
                   className="form-control"
                   required

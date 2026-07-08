@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import {
   Search,
   Plus,
@@ -214,14 +216,81 @@ export default function PatientsScreen() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [messagingRecipient, setMessagingRecipient] = useState<'All' | 'Single'>('All');
 
-  // Forms state
-  const [patientForm, setPatientForm] = useState({
-    name: '', age: '', gender: 'Male', phone: '', email: '',
-    bloodGroup: 'B+', height: '', weight: '', allergies: 'None',
-    maritalStatus: 'Single', address: '', emergencyName: '', emergencyPhone: '', dob: ''
+  // Forms state via Formik
+  const patientFormik = useFormik({
+    initialValues: {
+      name: '', age: '', gender: 'Male', phone: '', email: '',
+      bloodGroup: 'B+', height: '', weight: '', allergies: 'None',
+      maritalStatus: 'Single', address: '', emergencyName: '', emergencyPhone: '', dob: ''
+    },
+    validationSchema: Yup.object({
+      name: Yup.string().required('Full Name is required'),
+      phone: Yup.string().required('Phone Number is required')
+    }),
+    onSubmit: (values) => {
+      if (isAddModalOpen) {
+        handleAddPatientSubmit(values);
+      } else {
+        handleEditPatientSubmit(values);
+      }
+    }
   });
-  const [messageForm, setMessageForm] = useState({ subject: '', message: '' });
-  const [importFile, setImportFile] = useState<File | null>(null);
+
+  const messageFormik = useFormik({
+    initialValues: { subject: '', message: '' },
+    validationSchema: Yup.object({
+      subject: Yup.string().required('Subject is required'),
+      message: Yup.string().required('Message is required')
+    }),
+    onSubmit: () => {
+      setIsMessageModalOpen(false);
+      messageFormik.resetForm();
+
+      if (messagingRecipient === 'All') {
+        showToast('Broadcast message scheduled and sent to all active patients.', 'success');
+      } else {
+        showToast(`Notification message successfully sent to ${selectedPatient?.name}.`, 'success');
+      }
+    }
+  });
+
+  const importFormik = useFormik({
+    initialValues: { file: null as File | null },
+    onSubmit: (values) => {
+      if (!values.file) {
+        showToast('Please select a CSV/JSON file to upload.', 'error');
+        return;
+      }
+      setIsImporting(true);
+      setImportProgress(10);
+
+      const interval = setInterval(() => {
+        setImportProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+              const imported: Patient[] = [
+                { id: 'PAT781290', name: 'Tanya Sen', initials: 'TS', age: 34, gender: 'Female', phone: '+91 96521 88990', email: 'tanya.sen@email.com', lastVisit: 'Today', lastVisitTime: '10:00 AM', status: 'Active', appointments: 1 },
+                { id: 'PAT781291', name: 'Rahul Gupta', initials: 'RG', age: 42, gender: 'Male', phone: '+91 88320 12345', email: 'rahul.gupta@email.com', lastVisit: 'Today', lastVisitTime: '11:15 AM', status: 'Active', appointments: 2 }
+              ];
+
+              const updatedList = [...imported, ...patients];
+              syncPatients(updatedList);
+
+              setIsImporting(false);
+              setIsImportModalOpen(false);
+              importFormik.resetForm();
+              setImportProgress(0);
+              showToast('2 patients successfully imported from CSV file.');
+            }, 300);
+            return 100;
+          }
+          return prev + 30;
+        });
+      }, 200);
+    }
+  });
+
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
 
@@ -269,32 +338,20 @@ export default function PatientsScreen() {
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
-  // Handle Form changes
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setPatientForm(prev => ({ ...prev, [name]: value }));
-  };
-
   // Submit Add Patient
-  const handleAddPatientSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!patientForm.name || !patientForm.phone) {
-      showToast('Patient name and phone number are required.', 'error');
-      return;
-    }
-
+  const handleAddPatientSubmit = (values: any) => {
     const patientId = `PAT${Math.floor(100000 + Math.random() * 900000)}`;
-    const names = patientForm.name.trim().split(' ');
+    const names = values.name.trim().split(' ');
     const initials = names.length > 1 ? (names[0][0] + names[names.length - 1][0]).toUpperCase() : names[0][0].toUpperCase();
 
     const newPatient: Patient = {
       id: patientId,
-      name: patientForm.name,
+      name: values.name,
       initials,
-      age: parseInt(patientForm.age) || 30,
-      gender: patientForm.gender,
-      phone: patientForm.phone,
-      email: patientForm.email || `${names[0].toLowerCase()}@email.com`,
+      age: parseInt(values.age) || 30,
+      gender: values.gender,
+      phone: values.phone,
+      email: values.email || `${names[0].toLowerCase()}@email.com`,
       lastVisit: 'Today',
       lastVisitTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       status: 'Active',
@@ -308,20 +365,20 @@ export default function PatientsScreen() {
     // Save Patient Detail record for PatientDetailScreen
     const newDetail = {
       id: patientId,
-      name: patientForm.name,
+      name: values.name,
       initials,
       avatarColor: 'bg-teal-100 text-teal-700',
-      gender: patientForm.gender,
-      age: parseInt(patientForm.age) || 30,
-      dob: patientForm.dob || '01 Jan 1995',
-      phone: patientForm.phone,
-      email: patientForm.email || `${names[0].toLowerCase()}@email.com`,
-      address: patientForm.address || DEFAULT_PATIENT_DETAILS.address,
-      bloodGroup: patientForm.bloodGroup,
-      height: patientForm.height ? `${patientForm.height} cm` : DEFAULT_PATIENT_DETAILS.height,
-      weight: patientForm.weight ? `${patientForm.weight} kg` : DEFAULT_PATIENT_DETAILS.weight,
-      allergies: patientForm.allergies,
-      maritalStatus: patientForm.maritalStatus,
+      gender: values.gender,
+      age: parseInt(values.age) || 30,
+      dob: values.dob || '01 Jan 1995',
+      phone: values.phone,
+      email: values.email || `${names[0].toLowerCase()}@email.com`,
+      address: values.address || DEFAULT_PATIENT_DETAILS.address,
+      bloodGroup: values.bloodGroup,
+      height: values.height ? `${values.height} cm` : DEFAULT_PATIENT_DETAILS.height,
+      weight: values.weight ? `${values.weight} kg` : DEFAULT_PATIENT_DETAILS.weight,
+      allergies: values.allergies,
+      maritalStatus: values.maritalStatus,
       totalAppointments: 0,
       totalPrescriptions: 0,
       ongoingTreatments: 0,
@@ -338,8 +395,8 @@ export default function PatientsScreen() {
         reason: 'New Registration Checkup'
       },
       emergency: {
-        name: patientForm.emergencyName || 'None',
-        phone: patientForm.emergencyPhone || 'None'
+        name: values.emergencyName || 'None',
+        phone: values.emergencyPhone || 'None'
       },
       notes: 'New patient registered.',
       notesDate: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
@@ -361,23 +418,19 @@ export default function PatientsScreen() {
   };
 
   // Submit Edit Patient
-  const handleEditPatientSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPatient || !patientForm.name || !patientForm.phone) {
-      showToast('Name and phone number are required.', 'error');
-      return;
-    }
+  const handleEditPatientSubmit = (values: any) => {
+    if (!selectedPatient) return;
 
     // Update Basic List
     const updatedList = patients.map(p => {
       if (p.id === selectedPatient.id) {
         return {
           ...p,
-          name: patientForm.name,
-          age: parseInt(patientForm.age) || p.age,
-          gender: patientForm.gender,
-          phone: patientForm.phone,
-          email: patientForm.email,
+          name: values.name,
+          age: parseInt(values.age) || p.age,
+          gender: values.gender,
+          phone: values.phone,
+          email: values.email,
         };
       }
       return p;
@@ -394,20 +447,20 @@ export default function PatientsScreen() {
     if (detailsDict[selectedPatient.id]) {
       detailsDict[selectedPatient.id] = {
         ...detailsDict[selectedPatient.id],
-        name: patientForm.name,
-        age: parseInt(patientForm.age) || selectedPatient.age,
-        gender: patientForm.gender,
-        phone: patientForm.phone,
-        email: patientForm.email,
-        bloodGroup: patientForm.bloodGroup,
-        height: patientForm.height.includes('cm') ? patientForm.height : `${patientForm.height} cm`,
-        weight: patientForm.weight.includes('kg') ? patientForm.weight : `${patientForm.weight} kg`,
-        allergies: patientForm.allergies,
-        maritalStatus: patientForm.maritalStatus,
-        address: patientForm.address,
+        name: values.name,
+        age: parseInt(values.age) || selectedPatient.age,
+        gender: values.gender,
+        phone: values.phone,
+        email: values.email,
+        bloodGroup: values.bloodGroup,
+        height: values.height.includes('cm') ? values.height : `${values.height} cm`,
+        weight: values.weight.includes('kg') ? values.weight : `${values.weight} kg`,
+        allergies: values.allergies,
+        maritalStatus: values.maritalStatus,
+        address: values.address,
         emergency: {
-          name: patientForm.emergencyName,
-          phone: patientForm.emergencyPhone
+          name: values.emergencyName,
+          phone: values.emergencyPhone
         }
       };
     } else {
@@ -416,18 +469,18 @@ export default function PatientsScreen() {
         ...selectedPatient,
         avatarColor: 'bg-teal-100 text-teal-700',
         dob: '01 Jan 1990',
-        bloodGroup: patientForm.bloodGroup,
-        height: `${patientForm.height} cm`,
-        weight: `${patientForm.weight} kg`,
-        allergies: patientForm.allergies,
-        maritalStatus: patientForm.maritalStatus,
-        address: patientForm.address,
+        bloodGroup: values.bloodGroup,
+        height: `${values.height} cm`,
+        weight: `${values.weight} kg`,
+        allergies: values.allergies,
+        maritalStatus: values.maritalStatus,
+        address: values.address,
         totalAppointments: selectedPatient.appointments,
         totalPrescriptions: 2,
         ongoingTreatments: 1,
         chronicConditions: [],
         medications: [],
-        emergency: { name: patientForm.emergencyName, phone: patientForm.emergencyPhone },
+        emergency: { name: values.emergencyName, phone: values.emergencyPhone },
         recentAppointment: { date: selectedPatient.lastVisit, time: selectedPatient.lastVisitTime, type: 'Consultation', location: 'Clinic', status: 'Completed', reason: 'Regular Followup' },
         notes: 'Updated.',
         notesDate: 'Today',
@@ -438,7 +491,7 @@ export default function PatientsScreen() {
 
     setIsEditModalOpen(false);
     resetForm();
-    showToast(`Patient details for ${patientForm.name} updated successfully.`);
+    showToast(`Patient details for ${values.name} updated successfully.`);
   };
 
   // Toggle Active/Inactive Status
@@ -477,61 +530,6 @@ export default function PatientsScreen() {
     setSelectedPatient(null);
   };
 
-  // Mock CSV Patient Import
-  const handleImportSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!importFile) {
-      showToast('Please select a CSV/JSON file to upload.', 'error');
-      return;
-    }
-
-    setIsImporting(true);
-    setImportProgress(10);
-
-    const interval = setInterval(() => {
-      setImportProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            const imported: Patient[] = [
-              { id: 'PAT781290', name: 'Tanya Sen', initials: 'TS', age: 34, gender: 'Female', phone: '+91 96521 88990', email: 'tanya.sen@email.com', lastVisit: 'Today', lastVisitTime: '10:00 AM', status: 'Active', appointments: 1 },
-              { id: 'PAT781291', name: 'Rahul Gupta', initials: 'RG', age: 42, gender: 'Male', phone: '+91 88320 12345', email: 'rahul.gupta@email.com', lastVisit: 'Today', lastVisitTime: '11:15 AM', status: 'Active', appointments: 2 }
-            ];
-
-            const updatedList = [...imported, ...patients];
-            syncPatients(updatedList);
-
-            setIsImporting(false);
-            setIsImportModalOpen(false);
-            setImportFile(null);
-            setImportProgress(0);
-            showToast('2 patients successfully imported from CSV file.');
-          }, 300);
-          return 100;
-        }
-        return prev + 30;
-      });
-    }, 200);
-  };
-
-  // Message Send submit
-  const handleSendMessageSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!messageForm.subject || !messageForm.message) {
-      showToast('Please enter both subject and message body.', 'error');
-      return;
-    }
-
-    setIsMessageModalOpen(false);
-    setMessageForm({ subject: '', message: '' });
-
-    if (messagingRecipient === 'All') {
-      showToast('Broadcast message scheduled and sent to all active patients.', 'success');
-    } else {
-      showToast(`Notification message successfully sent to ${selectedPatient?.name}.`, 'success');
-    }
-  };
-
   // Pre-fill edit fields
   const openEditModal = (pt: Patient) => {
     setSelectedPatient(pt);
@@ -546,12 +544,12 @@ export default function PatientsScreen() {
       } catch (err) { }
     }
 
-    setPatientForm({
+    patientFormik.setValues({
       name: pt.name,
       age: String(pt.age),
       gender: pt.gender,
       phone: pt.phone,
-      email: pt.email,
+      email: pt.email || '',
       bloodGroup: details?.bloodGroup || 'B+',
       height: details?.height ? details.height.replace(' cm', '') : '',
       weight: details?.weight ? details.weight.replace(' kg', '') : '',
@@ -566,11 +564,7 @@ export default function PatientsScreen() {
   };
 
   const resetForm = () => {
-    setPatientForm({
-      name: '', age: '', gender: 'Male', phone: '', email: '',
-      bloodGroup: 'B+', height: '', weight: '', allergies: 'None',
-      maritalStatus: 'Single', address: '', emergencyName: '', emergencyPhone: '', dob: ''
-    });
+    patientFormik.resetForm();
   };
 
   // Apply filters
@@ -632,29 +626,29 @@ export default function PatientsScreen() {
       )}
 
       {/* ─── Page Header ──────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4 mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800">Patient Management</h1>
           <p className="text-sm text-slate-500 mt-0.5">View, manage and track all your patients</p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto shrink-0">
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all cursor-pointer whitespace-nowrap"
           >
             <Download className="w-4 h-4" />
             Import Patients
           </button>
           <button
             onClick={() => { resetForm(); setIsAddModalOpen(true); }}
-            className="btn btn-primary flex items-center gap-2 px-5 py-2.5 shadow-md shadow-teal-500/20 text-sm cursor-pointer"
+            className="flex-1 sm:flex-none btn btn-primary flex items-center justify-center gap-2 px-5 py-2.5 shadow-md shadow-teal-500/20 text-sm font-bold cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             Add New Patient
           </button>
           <button
             onClick={() => { setMessagingRecipient('All'); setIsMessageModalOpen(true); }}
-            className="p-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 rounded-xl shadow-sm transition-all cursor-pointer"
+            className="p-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 rounded-xl shadow-sm transition-all cursor-pointer shrink-0"
             title="Broadcast Message"
           >
             <Send className="w-4 h-4" />
@@ -666,7 +660,7 @@ export default function PatientsScreen() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
         {/* ── Left Panel ─────────────────────────────────────────────────── */}
-        <div className="lg:col-span-8 space-y-4">
+        <div className="col-span-12 lg:col-span-8 space-y-4">
 
           {/* Search / Filter Toolbar */}
           <div className="flex flex-wrap items-center gap-3">
@@ -796,7 +790,7 @@ export default function PatientsScreen() {
           {/* Table Card */}
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
             {/* Table Header */}
-            <div className="grid grid-cols-12 gap-2 px-5 py-2.5 bg-slate-50 border-b border-slate-100">
+            <div className="hidden md:grid grid-cols-12 gap-2 px-5 py-2.5 bg-slate-50 border-b border-slate-100">
               {[
                 { label: 'Patient Details', span: 'col-span-3' },
                 { label: 'Contact', span: 'col-span-3' },
@@ -823,41 +817,54 @@ export default function PatientsScreen() {
                   <div
                     key={pt.id}
                     onClick={() => navigate(`/patients/${pt.id}`)}
-                    className="grid grid-cols-12 gap-2 px-5 py-3.5 items-center cursor-pointer hover:bg-slate-50/80 transition-colors group"
+                    className="flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-2 px-5 py-4 md:py-3.5 items-start md:items-center cursor-pointer hover:bg-slate-50/80 transition-colors group"
                   >
                     {/* Patient Details */}
-                    <div className="col-span-3 flex items-center gap-2.5 min-w-0">
-                      <Avatar initials={pt.initials} />
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-slate-800 truncate">{pt.name}</p>
-                        <p className="text-[11px] text-slate-400">{pt.age} Y, {pt.gender} · {pt.id}</p>
+                    <div className="col-span-12 md:col-span-3 flex items-center justify-between md:justify-start w-full gap-2.5 min-w-0">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Avatar initials={pt.initials} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-slate-800 truncate">{pt.name}</p>
+                          <p className="text-[11px] text-slate-400">{pt.age} Y, {pt.gender} · {pt.id}</p>
+                        </div>
+                      </div>
+                      <div className="md:hidden">
+                        <StatusBadge status={pt.status} />
                       </div>
                     </div>
 
                     {/* Contact */}
-                    <div className="col-span-3">
-                      <p className="text-xs font-semibold text-slate-700">{pt.phone}</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5 truncate">{pt.email}</p>
+                    <div className="col-span-12 md:col-span-3 flex items-center justify-between md:block w-full border-t border-slate-100 md:border-none pt-2.5 md:pt-0">
+                      <span className="md:hidden text-[11px] font-bold text-slate-400 uppercase tracking-wider">Contact</span>
+                      <div className="text-right md:text-left">
+                        <p className="text-xs font-semibold text-slate-700">{pt.phone}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5 truncate max-w-[200px] md:max-w-none ml-auto md:ml-0">{pt.email}</p>
+                      </div>
                     </div>
 
                     {/* Last Visit */}
-                    <div className="col-span-2">
-                      <p className="text-xs font-semibold text-slate-700">{pt.lastVisit}</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">{pt.lastVisitTime}</p>
+                    <div className="col-span-12 md:col-span-2 flex items-center justify-between md:block w-full border-t border-slate-100 md:border-none pt-2.5 md:pt-0">
+                      <span className="md:hidden text-[11px] font-bold text-slate-400 uppercase tracking-wider">Last Visit</span>
+                      <div className="text-right md:text-left">
+                        <p className="text-xs font-semibold text-slate-700">{pt.lastVisit}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{pt.lastVisitTime}</p>
+                      </div>
                     </div>
 
                     {/* Status */}
-                    <div className="col-span-1">
+                    <div className="hidden md:block md:col-span-1">
                       <StatusBadge status={pt.status} />
                     </div>
 
                     {/* Total Appointments */}
-                    <div className="col-span-2 text-center">
-                      <span className="text-sm font-bold text-slate-700">{pt.appointments}</span>
+                    <div className="col-span-12 md:col-span-2 flex items-center justify-between md:block w-full border-t border-slate-100 md:border-none pt-2.5 md:pt-0">
+                      <span className="md:hidden text-[11px] font-bold text-slate-400 uppercase tracking-wider">Appointments</span>
+                      <span className="text-sm font-bold text-slate-700 text-right md:text-left">{pt.appointments}</span>
                     </div>
 
                     {/* Actions */}
-                    <div className="col-span-1 flex items-center justify-end gap-1 relative">
+                    <div className="col-span-12 md:col-span-1 flex items-center justify-end w-full md:w-auto gap-1 border-t border-slate-100 md:border-none pt-2.5 md:pt-0 mt-1 md:mt-0 relative">
+                      <span className="md:hidden mr-auto text-[11px] font-bold text-slate-400 uppercase tracking-wider">Actions</span>
                       <button
                         onClick={e => { e.stopPropagation(); navigate(`/patients/${pt.id}`); }}
                         className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
@@ -959,8 +966,8 @@ export default function PatientsScreen() {
           </div>
         </div>
 
-        {/* ── Right Sidebar ───────────────────────────────────────────────── */}
-        <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-5">
+        {/* ── Right Panel ────────────────────────────────────────────────── */}
+        <div className="col-span-12 lg:col-span-4 space-y-4 lg:sticky lg:top-5">
 
           {/* Patient Summary Donut */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
@@ -1057,7 +1064,7 @@ export default function PatientsScreen() {
           onClick={() => { setIsAddModalOpen(false); setIsEditModalOpen(false); }}
         >
           <div
-            className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto modal-scrollbar animate-fade"
+            className="bg-white rounded-2xl max-w-2xl w-[95%] sm:w-full p-5 sm:p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto modal-scrollbar animate-fade"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -1072,15 +1079,15 @@ export default function PatientsScreen() {
               </button>
             </div>
 
-            <form onSubmit={isAddModalOpen ? handleAddPatientSubmit : handleEditPatientSubmit} className="space-y-4">
+             <form onSubmit={patientFormik.handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="form-group">
                   <label className="form-label">Full Name *</label>
                   <input
                     type="text"
                     name="name"
-                    value={patientForm.name}
-                    onChange={handleFormChange}
+                    value={patientFormik.values.name}
+                    onChange={patientFormik.handleChange}
                     placeholder="e.g. Amit Sharma"
                     className="form-control"
                     required
@@ -1091,8 +1098,8 @@ export default function PatientsScreen() {
                   <input
                     type="text"
                     name="phone"
-                    value={patientForm.phone}
-                    onChange={handleFormChange}
+                    value={patientFormik.values.phone}
+                    onChange={patientFormik.handleChange}
                     placeholder="e.g. +91 98765 43210"
                     className="form-control"
                     required
@@ -1103,8 +1110,8 @@ export default function PatientsScreen() {
                   <input
                     type="email"
                     name="email"
-                    value={patientForm.email}
-                    onChange={handleFormChange}
+                    value={patientFormik.values.email}
+                    onChange={patientFormik.handleChange}
                     placeholder="e.g. amit@example.com"
                     className="form-control"
                   />
@@ -1115,8 +1122,8 @@ export default function PatientsScreen() {
                     <input
                       type="number"
                       name="age"
-                      value={patientForm.age}
-                      onChange={handleFormChange}
+                      value={patientFormik.values.age}
+                      onChange={patientFormik.handleChange}
                       placeholder="32"
                       className="form-control"
                     />
@@ -1125,8 +1132,8 @@ export default function PatientsScreen() {
                     <label className="form-label">Gender</label>
                     <select
                       name="gender"
-                      value={patientForm.gender}
-                      onChange={handleFormChange}
+                      value={patientFormik.values.gender}
+                      onChange={patientFormik.handleChange}
                       className="form-control cursor-pointer"
                     >
                       <option value="Male">Male</option>
@@ -1141,8 +1148,8 @@ export default function PatientsScreen() {
                     <label className="form-label">Blood Group</label>
                     <select
                       name="bloodGroup"
-                      value={patientForm.bloodGroup}
-                      onChange={handleFormChange}
+                      value={patientFormik.values.bloodGroup}
+                      onChange={patientFormik.handleChange}
                       className="form-control cursor-pointer"
                     >
                       {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => (
@@ -1155,8 +1162,8 @@ export default function PatientsScreen() {
                     <input
                       type="text"
                       name="height"
-                      value={patientForm.height}
-                      onChange={handleFormChange}
+                      value={patientFormik.values.height}
+                      onChange={patientFormik.handleChange}
                       placeholder="175"
                       className="form-control"
                     />
@@ -1166,8 +1173,8 @@ export default function PatientsScreen() {
                     <input
                       type="text"
                       name="weight"
-                      value={patientForm.weight}
-                      onChange={handleFormChange}
+                      value={patientFormik.values.weight}
+                      onChange={patientFormik.handleChange}
                       placeholder="70"
                       className="form-control"
                     />
@@ -1178,8 +1185,8 @@ export default function PatientsScreen() {
                   <label className="form-label">Marital Status</label>
                   <select
                     name="maritalStatus"
-                    value={patientForm.maritalStatus}
-                    onChange={handleFormChange}
+                    value={patientFormik.values.maritalStatus}
+                    onChange={patientFormik.handleChange}
                     className="form-control cursor-pointer"
                   >
                     <option value="Single">Single</option>
@@ -1195,8 +1202,8 @@ export default function PatientsScreen() {
                 <input
                   type="text"
                   name="address"
-                  value={patientForm.address}
-                  onChange={handleFormChange}
+                  value={patientFormik.values.address}
+                  onChange={patientFormik.handleChange}
                   placeholder="Street, City, Zipcode"
                   className="form-control"
                 />
@@ -1207,8 +1214,8 @@ export default function PatientsScreen() {
                 <input
                   type="text"
                   name="allergies"
-                  value={patientForm.allergies}
-                  onChange={handleFormChange}
+                  value={patientFormik.values.allergies}
+                  onChange={patientFormik.handleChange}
                   placeholder="e.g. Penicillin, Pollen, None"
                   className="form-control"
                 />
@@ -1222,8 +1229,8 @@ export default function PatientsScreen() {
                     <input
                       type="text"
                       name="emergencyName"
-                      value={patientForm.emergencyName}
-                      onChange={handleFormChange}
+                      value={patientFormik.values.emergencyName}
+                      onChange={patientFormik.handleChange}
                       placeholder="e.g. Rahul Sharma (Brother)"
                       className="form-control"
                     />
@@ -1233,8 +1240,8 @@ export default function PatientsScreen() {
                     <input
                       type="text"
                       name="emergencyPhone"
-                      value={patientForm.emergencyPhone}
-                      onChange={handleFormChange}
+                      value={patientFormik.values.emergencyPhone}
+                      onChange={patientFormik.handleChange}
                       placeholder="e.g. +91 XXXXX XXXXX"
                       className="form-control"
                     />
@@ -1270,7 +1277,7 @@ export default function PatientsScreen() {
           onClick={() => setIsDeleteConfirmOpen(false)}
         >
           <div
-            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade"
+            className="bg-white rounded-2xl max-w-md w-[95%] sm:w-full p-5 sm:p-6 shadow-2xl border border-slate-100 animate-fade"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 text-rose-600 mb-3">
@@ -1306,7 +1313,7 @@ export default function PatientsScreen() {
           onClick={() => setIsImportModalOpen(false)}
         >
           <div
-            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-fade"
+            className="bg-white rounded-2xl max-w-md w-[95%] sm:w-full p-5 sm:p-6 shadow-2xl border border-slate-100 animate-fade"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -1319,7 +1326,7 @@ export default function PatientsScreen() {
               </button>
             </div>
 
-            <form onSubmit={handleImportSubmit} className="space-y-4">
+             <form onSubmit={importFormik.handleSubmit} className="space-y-4">
               <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-teal-400 transition-colors flex flex-col items-center gap-2">
                 <FileText className="w-10 h-10 text-slate-400" />
                 <p className="text-xs font-bold text-slate-700">Drag & drop CSV/JSON file here</p>
@@ -1327,7 +1334,7 @@ export default function PatientsScreen() {
                 <input
                   type="file"
                   accept=".csv,.json"
-                  onChange={e => setImportFile(e.target.files ? e.target.files[0] : null)}
+                  onChange={e => importFormik.setFieldValue('file', e.target.files ? e.target.files[0] : null)}
                   className="hidden"
                   id="import-file-input"
                 />
@@ -1340,10 +1347,10 @@ export default function PatientsScreen() {
                 </button>
               </div>
 
-              {importFile && (
+              {importFormik.values.file && (
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-700 truncate max-w-[200px]">{importFile.name}</span>
-                  <button type="button" onClick={() => setImportFile(null)} className="text-rose-500 hover:text-rose-600 cursor-pointer">
+                  <span className="text-xs font-semibold text-slate-700 truncate max-w-[200px]">{importFormik.values.file.name}</span>
+                  <button type="button" onClick={() => importFormik.setFieldValue('file', null)} className="text-rose-500 hover:text-rose-600 cursor-pointer">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -1372,7 +1379,7 @@ export default function PatientsScreen() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isImporting || !importFile}
+                  disabled={isImporting || !importFormik.values.file}
                   className="btn btn-primary text-xs cursor-pointer py-2 px-4"
                 >
                   Import data
@@ -1391,7 +1398,7 @@ export default function PatientsScreen() {
           onClick={() => setIsMessageModalOpen(false)}
         >
           <div
-            className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-fade"
+            className="bg-white rounded-2xl max-w-lg w-[95%] sm:w-full p-5 sm:p-6 shadow-2xl border border-slate-100 animate-fade"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -1406,7 +1413,7 @@ export default function PatientsScreen() {
               </button>
             </div>
 
-            <form onSubmit={handleSendMessageSubmit} className="space-y-4">
+            <form onSubmit={messageFormik.handleSubmit} className="space-y-4">
               {messagingRecipient === 'All' ? (
                 <div className="bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium rounded-xl p-3.5">
                   ⚠️ This message will be sent to all active patients in your database via SMS and registered email address.
@@ -1421,8 +1428,9 @@ export default function PatientsScreen() {
                 <label className="form-label">Subject / Purpose</label>
                 <input
                   type="text"
-                  value={messageForm.subject}
-                  onChange={e => setMessageForm(prev => ({ ...prev, subject: e.target.value }))}
+                  name="subject"
+                  value={messageFormik.values.subject}
+                  onChange={messageFormik.handleChange}
                   placeholder="e.g. Clinic Timing Updates or Health Checkup Reminder"
                   className="form-control"
                   required
@@ -1432,8 +1440,9 @@ export default function PatientsScreen() {
               <div className="form-group">
                 <label className="form-label">Message Body</label>
                 <textarea
-                  value={messageForm.message}
-                  onChange={e => setMessageForm(prev => ({ ...prev, message: e.target.value }))}
+                  name="message"
+                  value={messageFormik.values.message}
+                  onChange={messageFormik.handleChange}
                   placeholder="Type your message details here..."
                   className="form-control h-32"
                   required

@@ -81,9 +81,9 @@ const ProfileLayout = () => {
       </div>
 
       {/* Content + Right Sidebar */}
-      <div className="flex gap-5 items-start">
+      <div className="flex flex-col lg:flex-row gap-5 items-start">
         {/* Main Content */}
-        <div className="flex-1 min-w-0 space-y-5">
+        <div className="flex-1 min-w-0 space-y-5 w-full">
           {activeTab === 'personal' && <PersonalInfoSection />}
           {activeTab === 'professional' && <ProfessionalInfoSection />}
           {activeTab === 'kyc' && <KYCVerificationSection />}
@@ -117,7 +117,7 @@ const ProfileLayout = () => {
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-72 shrink-0 space-y-4">
+        <div className="w-full lg:w-72 shrink-0 space-y-4">
           {/* Profile Completion Card */}
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
             <h3 className="text-sm font-bold text-slate-800 mb-4">Profile Completion</h3>

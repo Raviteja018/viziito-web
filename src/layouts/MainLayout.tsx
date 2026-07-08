@@ -14,7 +14,7 @@ const MainLayout = () => {
   const { t } = useLanguage();
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden relative" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+    <div className="flex h-screen bg-slate-50 overflow-hidden relative" style={{ fontFamily: "var(--font-sans)" }}>
 
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
@@ -46,11 +46,11 @@ const MainLayout = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder={t("Search patients, appointments, prescriptions...")}
+                placeholder={t("Search patients, doctors, staff, appointments...")}
                 className="w-full pl-9 pr-14 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition-all"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
-                <kbd className="text-[10px] font-semibold text-slate-400 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">⌘K</kbd>
+                <kbd className="text-[10px] font-semibold text-slate-400 bg-slate-100 border border-slate-200 rounded px-1 py-0.5">Ctrl + K</kbd>
               </div>
             </div>
           </div>
@@ -62,8 +62,8 @@ const MainLayout = () => {
               className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-full transition-colors cursor-pointer"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-teal-500 rounded-full border-2 border-white flex items-center justify-center">
-                <span className="text-[8px] font-bold text-white leading-none">6</span>
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+                <span className="text-[8px] font-bold text-white leading-none">12</span>
               </span>
             </button>
 
@@ -77,7 +77,9 @@ const MainLayout = () => {
               >
                 <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden shrink-0 ring-2 ring-white shadow-sm">
                   <div className="w-full h-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">AR</span>
+                    <span className="text-white text-xs font-bold">
+                      {role === 'doctor' ? 'AR' : role === 'hospital' ? 'HA' : 'VI'}
+                    </span>
                   </div>
                 </div>
                 <div className="hidden sm:block text-right select-none">
@@ -85,13 +87,15 @@ const MainLayout = () => {
                     {role === 'doctor' ? 'Dr. Arjun Reddy' :
                      role === 'patient' ? 'Meera' :
                      role === 'clinic' ? 'City Care' :
-                     role === 'hospital' ? 'Apollo Hospital' :
+                     role === 'hospital' ? 'Hospital Admin' :
                      role === 'pharmacy' ? 'MediPlus Pharmacy' :
                      role === 'diagnostic' ? 'Dr Lal Labs' :
                      role === 'homecare' ? 'Portea HomeCare' :
                      'RedCross Dispatch'}
                   </p>
-                  <p className="text-[10px] text-slate-400 leading-none mt-1 capitalize font-medium">{role}</p>
+                  <p className="text-[10px] text-slate-400 leading-none mt-1 capitalize font-medium">
+                    {role === 'hospital' ? 'Administrator' : role}
+                  </p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-slate-400 hidden sm:block" />
               </div>

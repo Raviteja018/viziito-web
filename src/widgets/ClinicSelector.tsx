@@ -29,7 +29,7 @@ const ClinicSelector = () => {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 sm:left-0 top-full mt-2 w-64 bg-white border border-slate-200 shadow-xl shadow-slate-200/50 rounded-xl p-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-64 bg-white border border-slate-200 shadow-xl shadow-slate-200/50 rounded-xl p-2 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
             <button
               onClick={() => { setSelectedClinic(null); setIsOpen(false); }}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
