@@ -19,7 +19,8 @@ export type UserRole =
   | 'pharmacy' 
   | 'diagnostic' 
   | 'homecare' 
-  | 'ambulance';
+  | 'ambulance'
+  | 'equipment';
 
 interface UserTypeSelectionProps {
   onSelectRole: (role: UserRole) => void;

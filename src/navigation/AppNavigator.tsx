@@ -177,7 +177,7 @@ const LoginWrapper = () => {
   return (
     <AuthModule 
       onLoginSuccess={() => navigate('/dashboard')}
-      onRegisterClick={() => navigate('/auth/role-selection')}
+      onRegisterClick={() => navigate('/auth/register')}
     />
   );
 };
@@ -195,15 +195,15 @@ const RoleSelectionWrapper = () => {
 const RegisterWrapper = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const role = searchParams.get('role') as UserRole || 'doctor';
+  const role = searchParams.get('role') as UserRole || undefined;
   const { setRole } = useRole();
 
   return (
     <RegistrationModule 
       role={role}
-      onBackToRoles={() => navigate('/auth/role-selection')}
-      onRegisterSuccess={() => {
-        setRole(role);
+      onBackToLogin={() => navigate('/auth/login')}
+      onRegisterSuccess={(userData) => {
+        setRole(userData.role);
         navigate('/dashboard');
       }}
     />

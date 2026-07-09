@@ -1,615 +1,1343 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { UserRole } from './UserTypeSelection';
-import { ArrowLeft, User, Briefcase, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  User, 
+  Briefcase, 
+  CheckCircle2, 
+  ShieldAlert, 
+  Stethoscope, 
+  Building, 
+  Building2, 
+  Pill, 
+  Microscope, 
+  Home, 
+  Truck,
+  Mail,
+  Smartphone,
+  Edit2
+} from 'lucide-react';
+import { Formik, Form } from 'formik';
+import * as Yup from 'yup';
 
 interface RegistrationModuleProps {
-  role: UserRole;
-  onBackToRoles: () => void;
+  role?: UserRole;
+  onBackToRoles?: () => void;
+  onBackToLogin?: () => void;
   onRegisterSuccess: (userData: any) => void;
 }
 
-export default function RegistrationModule({ role, onBackToRoles, onRegisterSuccess }: RegistrationModuleProps) {
+export default function RegistrationModule({ 
+  role, 
+  onBackToRoles, 
+  onBackToLogin, 
+  onRegisterSuccess 
+}: RegistrationModuleProps) {
   const [step, setStep] = useState(1);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  
-  // Step 1 Fields
-  const [fullName, setFullName] = useState('');
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [emailAddress, setEmailAddress] = useState('');
-  const [dob, setDob] = useState('');
-  const [gender, setGender] = useState('');
+  const handleBackNavigation = onBackToLogin || onBackToRoles || (() => {});
 
-  // Step 2 Fields
-  const [medicalRegNo, setMedicalRegNo] = useState('');
-  const [qualification, setQualification] = useState('');
-  const [specialization, setSpecialization] = useState('');
-  const [experience, setExperience] = useState('');
-  const [languagesKnown, setLanguagesKnown] = useState('');
-  const [consultationType, setConsultationType] = useState('Both');
+  // Step 1: Personal Info
+  const [personalValues, setPersonalValues] = useState({
+    fullName: '',
+    mobileNumber: '',
+    emailAddress: '',
+    dob: '',
+    gender: ''
+  });
 
-  // Org Specific Step 1 Fields
-  const [orgName, setOrgName] = useState('');
-  const [authorizedPerson, setAuthorizedPerson] = useState('');
-  
-  // Org Specific Step 2 Fields
-  const [hospitalRegNo, setHospitalRegNo] = useState('');
-  const [numBeds, setNumBeds] = useState('');
-  const [departments, setDepartments] = useState('');
-  const [clinicRegNo, setClinicRegNo] = useState('');
-  const [clinicType, setClinicType] = useState('');
-  const [drugLicenseNo, setDrugLicenseNo] = useState('');
-  const [diagRegNo, setDiagRegNo] = useState('');
-  const [servicesOffered, setServicesOffered] = useState('');
-  const [fleetSize, setFleetSize] = useState('');
+  // Step 2: Provider Category Selection
+  const [providerCategory, setProviderCategory] = useState<UserRole | ''>(role || '');
 
-  const isDoctor = role === 'doctor';
-  const isPatient = role === 'patient';
+  // Step 3: Flat State structure to avoid Formik Union Type TS compilation errors
+  const [step3Values, setStep3Values] = useState({
+    medicalRegNo: '',
+    qualification: '',
+    specialization: '',
+    experience: '',
+    superSpecialization: '',
+    languagesKnown: '',
+    hospitalName: '',
+    hospitalRegNo: '',
+    clinicName: '',
+    clinicRegNo: '',
+    pharmacyName: '',
+    drugLicenseNo: '',
+    laboratoryName: '',
+    laboratoryRegNo: '',
+    organizationName: '',
+    authorizedPersonName: ''
+  });
 
-  // Format header title
-  const getRoleTitle = () => {
-    switch (role) {
-      case 'doctor': return "Doctor Registration";
-      case 'hospital': return "Hospital Registration";
-      case 'clinic': return "Clinic Registration";
-      case 'pharmacy': return "Pharmacy Registration";
-      case 'diagnostic': return "Diagnostic Center Registration";
-      case 'homecare': return "Home Care Provider Registration";
-      case 'ambulance': return "Ambulance Provider Registration";
-      case 'patient': return "Patient Registration";
-      default: return "Registration";
+  // Step 5: OTP values
+  const [mobileOtpInput, setMobileOtpInput] = useState('');
+  const [emailOtpInput, setEmailOtpInput] = useState('');
+  const [otpErrors, setOtpErrors] = useState('');
+  const [resendCountdown, setResendCountdown] = useState(30);
+  const [otpSent, setOtpSent] = useState(true);
+
+  // Resend OTP timer countdown effect
+  useEffect(() => {
+    let timer: any;
+    if (step === 5 && resendCountdown > 0) {
+      timer = setInterval(() => {
+        setResendCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [step, resendCountdown]);
+
+  // Categories list definition
+  const categories = [
+    {
+      id: 'doctor' as UserRole,
+      title: "Medical Doctor",
+      description: "Consult patients online or in clinic, write e-prescriptions, and manage clinical schedules.",
+      icon: Stethoscope,
+      color: "text-teal-600",
+      bgHover: "hover:border-teal-500/30 hover:shadow-teal-500/5 hover:bg-teal-50/30"
+    },
+    {
+      id: 'hospital' as UserRole,
+      title: "Hospital Center",
+      description: "Manage emergency services, bed availability, multi-department doctors, and ward logistics.",
+      icon: Building2,
+      color: "text-teal-600",
+      bgHover: "hover:border-teal-500/30 hover:shadow-teal-500/5 hover:bg-teal-50/30"
+    },
+    {
+      id: 'clinic' as UserRole,
+      title: "Clinic Facility",
+      description: "Manage multiple doctors, appointments, reception queues, bills, and clinical operations.",
+      icon: Building,
+      color: "text-teal-600",
+      bgHover: "hover:border-teal-500/30 hover:shadow-teal-500/5 hover:bg-teal-50/30"
+    },
+    {
+      id: 'pharmacy' as UserRole,
+      title: "Pharmacy / Drugstore",
+      description: "Fulfill prescription orders, track medicine inventory, manage deliveries, and billing.",
+      icon: Pill,
+      color: "text-teal-600",
+      bgHover: "hover:border-teal-500/30 hover:shadow-teal-500/5 hover:bg-teal-50/30"
+    },
+    {
+      id: 'diagnostic' as UserRole,
+      title: "Laboratory / Diagnostic Center",
+      description: "Offer home sample collection, manage laboratory processing, and upload patient digital reports.",
+      icon: Microscope,
+      color: "text-teal-600",
+      bgHover: "hover:border-teal-500/30 hover:shadow-teal-500/5 hover:bg-teal-50/30"
+    },
+    {
+      id: 'homecare' as UserRole,
+      title: "Home Care Provider",
+      description: "Offer physical therapy, nursing care, elderly assistance, and post-surgery patient services.",
+      icon: Home,
+      color: "text-teal-600",
+      bgHover: "hover:border-teal-500/30 hover:shadow-teal-500/5 hover:bg-teal-50/30"
+    },
+    {
+      id: 'ambulance' as UserRole,
+      title: "Ambulance Operator",
+      description: "Receive dispatch alerts, track emergency fleets, and transport patients to critical care.",
+      icon: Truck,
+      color: "text-teal-600",
+      bgHover: "hover:border-teal-500/30 hover:shadow-teal-500/5 hover:bg-teal-50/30"
+    },
+    {
+      id: 'equipment' as UserRole,
+      title: "Equipment Rental Provider",
+      description: "Provide medical device leasing, surgical tools delivery, and diagnostic equipment rentals.",
+      icon: Briefcase,
+      color: "text-teal-600",
+      bgHover: "hover:border-teal-500/30 hover:shadow-teal-500/5 hover:bg-teal-50/30"
+    }
+  ];
+
+  // Helper to get selected category label
+  const getCategoryLabel = (id: string) => {
+    const found = categories.find(c => c.id === id);
+    return found ? found.title : id;
+  };
+
+  // Formik validation schemas using Yup
+  const step1Schema = Yup.object().shape({
+    fullName: Yup.string()
+      .min(2, 'Name must be at least 2 characters')
+      .max(100, 'Name must be under 100 characters')
+      .matches(/^[a-zA-Z\s.]+$/, 'Name can only contain letters, spaces, and dots')
+      .required('Full Name is required'),
+    mobileNumber: Yup.string()
+      .matches(/^\d{10}$/, 'Mobile Number must be exactly 10 digits')
+      .required('Mobile Number is required'),
+    emailAddress: Yup.string()
+      .email('Please enter a valid email address')
+      .required('Email Address is required'),
+    dob: Yup.date()
+      .max(new Date(), 'Date of Birth cannot be a future date')
+      .required('Date of Birth is required'),
+    gender: Yup.string()
+      .oneOf(['Male', 'Female', 'Other'], 'Please select a gender')
+      .required('Gender is required'),
+  });
+
+  const getStep3Schema = () => {
+    switch (providerCategory) {
+      case 'doctor':
+        return Yup.object().shape({
+          medicalRegNo: Yup.string().required('Medical Registration Number is required'),
+          qualification: Yup.string().required('Qualification is required'),
+          specialization: Yup.string().required('Specialization is required'),
+          experience: Yup.number()
+            .typeError('Experience must be a number')
+            .min(0, 'Experience cannot be negative')
+            .required('Years of Experience is required'),
+          superSpecialization: Yup.string().optional(),
+          languagesKnown: Yup.string().optional(),
+        });
+      case 'hospital':
+        return Yup.object().shape({
+          hospitalName: Yup.string().required('Hospital Name is required'),
+          hospitalRegNo: Yup.string().required('Hospital Registration Number is required'),
+          authorizedPersonName: Yup.string().required('Authorized Person Name is required'),
+        });
+      case 'clinic':
+        return Yup.object().shape({
+          clinicName: Yup.string().required('Clinic Name is required'),
+          clinicRegNo: Yup.string().required('Clinic Registration Number is required'),
+          authorizedPersonName: Yup.string().required('Authorized Person Name is required'),
+        });
+      case 'pharmacy':
+        return Yup.object().shape({
+          pharmacyName: Yup.string().required('Pharmacy Name is required'),
+          drugLicenseNo: Yup.string().required('Drug License Number is required'),
+          authorizedPersonName: Yup.string().required('Authorized Person Name is required'),
+        });
+      case 'diagnostic':
+        return Yup.object().shape({
+          laboratoryName: Yup.string().required('Laboratory Name is required'),
+          laboratoryRegNo: Yup.string().required('Laboratory Registration Number is required'),
+          authorizedPersonName: Yup.string().required('Authorized Person Name is required'),
+        });
+      case 'homecare':
+      case 'ambulance':
+      case 'equipment':
+      default:
+        return Yup.object().shape({
+          organizationName: Yup.string().required('Organization Name is required'),
+          authorizedPersonName: Yup.string().required('Authorized Person Name is required'),
+        });
     }
   };
 
-  // Validation routines
-  const validateStep1 = () => {
-    const errs: Record<string, string> = {};
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (isDoctor || isPatient) {
-      if (!fullName.trim()) errs.fullName = "Full Name is required";
-      if (!dob) errs.dob = "Date of Birth is required";
-      if (!gender) errs.gender = "Gender is required";
+  // Submit OTP Verification check
+  const handleVerifyOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (mobileOtpInput === '123456' && emailOtpInput === '654321') {
+      setStep(6);
+      setOtpErrors('');
     } else {
-      if (!orgName.trim()) errs.orgName = "Organization Name is required";
-      if (!authorizedPerson.trim()) errs.authorizedPerson = "Authorized Person Name is required";
-    }
-
-    if (!mobileNumber.trim()) {
-      errs.mobileNumber = "Mobile Number is required";
-    } else if (mobileNumber.trim().length !== 10) {
-      errs.mobileNumber = "Mobile Number must be exactly 10 digits";
-    }
-
-    if (!emailAddress.trim()) {
-      errs.emailAddress = "Email Address is required";
-    } else if (!emailRegex.test(emailAddress.trim())) {
-      errs.emailAddress = "Please enter a valid email address";
-    }
-
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  const validateStep2 = () => {
-    const errs: Record<string, string> = {};
-
-    if (isDoctor) {
-      if (!medicalRegNo.trim()) errs.medicalRegNo = "Medical Registration Number is required";
-      if (!qualification.trim()) errs.qualification = "Qualification is required";
-      if (!specialization.trim()) errs.specialization = "Specialization is required";
-      if (!experience.trim()) errs.experience = "Experience in years is required";
-    } else if (role === 'hospital') {
-      if (!hospitalRegNo.trim()) errs.hospitalRegNo = "Hospital Registration Number is required";
-    } else if (role === 'clinic') {
-      if (!clinicRegNo.trim()) errs.clinicRegNo = "Clinic Registration Number is required";
-    } else if (role === 'pharmacy') {
-      if (!drugLicenseNo.trim()) errs.drugLicenseNo = "Drug License Number is required";
-    } else if (role === 'diagnostic') {
-      if (!diagRegNo.trim()) errs.diagRegNo = "Diagnostic Registration Number is required";
-    }
-
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  const handleStep1Continue = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validateStep1()) {
-      if (isPatient) {
-        // Patient doesn't need step 2 info, register directly
-        handleSubmit(e);
-      } else {
-        setStep(2);
-        setErrors({});
-      }
+      setOtpErrors('Invalid OTP codes entered. Try Mobile: 123456, Email: 654321');
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isPatient || validateStep2()) {
-      const data = {
-        role,
-        fullName: isDoctor || isPatient ? fullName : authorizedPerson,
-        orgName: !isDoctor && !isPatient ? orgName : '',
-        email: emailAddress,
-        mobile: mobileNumber,
-        dob,
-        gender,
-        professionalInfo: isDoctor ? {
-          medicalRegNo,
-          qualification,
-          specialization,
-          experience,
-          languagesKnown,
-          consultationType
-        } : {
-          hospitalRegNo,
-          numBeds,
-          departments,
-          clinicRegNo,
-          clinicType,
-          drugLicenseNo,
-          diagRegNo,
-          servicesOffered,
-          fleetSize
-        }
-      };
-      
-      onRegisterSuccess(data);
-    }
+  const handleResendOtp = () => {
+    setResendCountdown(30);
+    setOtpSent(true);
+    setOtpErrors('');
+    setMobileOtpInput('');
+    setEmailOtpInput('');
   };
+
+  // Build the unified final data structure for dashboard redirection
+  const handleFinalSubmit = () => {
+    let professionalInfo = {};
+    let finalFullName = personalValues.fullName;
+
+    switch (providerCategory) {
+      case 'doctor':
+        professionalInfo = {
+          medicalRegNo: step3Values.medicalRegNo,
+          qualification: step3Values.qualification,
+          specialization: step3Values.specialization,
+          experience: step3Values.experience,
+          superSpecialization: step3Values.superSpecialization,
+          languagesKnown: step3Values.languagesKnown
+        };
+        break;
+      case 'hospital':
+        professionalInfo = {
+          hospitalName: step3Values.hospitalName,
+          hospitalRegNo: step3Values.hospitalRegNo,
+          authorizedPersonName: step3Values.authorizedPersonName
+        };
+        finalFullName = step3Values.authorizedPersonName;
+        break;
+      case 'clinic':
+        professionalInfo = {
+          clinicName: step3Values.clinicName,
+          clinicRegNo: step3Values.clinicRegNo,
+          authorizedPersonName: step3Values.authorizedPersonName
+        };
+        finalFullName = step3Values.authorizedPersonName;
+        break;
+      case 'pharmacy':
+        professionalInfo = {
+          pharmacyName: step3Values.pharmacyName,
+          drugLicenseNo: step3Values.drugLicenseNo,
+          authorizedPersonName: step3Values.authorizedPersonName
+        };
+        finalFullName = step3Values.authorizedPersonName;
+        break;
+      case 'diagnostic':
+        professionalInfo = {
+          laboratoryName: step3Values.laboratoryName,
+          laboratoryRegNo: step3Values.laboratoryRegNo,
+          authorizedPersonName: step3Values.authorizedPersonName
+        };
+        finalFullName = step3Values.authorizedPersonName;
+        break;
+      case 'homecare':
+      case 'ambulance':
+      case 'equipment':
+        professionalInfo = {
+          organizationName: step3Values.organizationName,
+          authorizedPersonName: step3Values.authorizedPersonName
+        };
+        finalFullName = step3Values.authorizedPersonName;
+        break;
+    }
+
+    const finalData = {
+      role: providerCategory || 'doctor',
+      fullName: finalFullName,
+      email: personalValues.emailAddress,
+      mobile: personalValues.mobileNumber,
+      dob: personalValues.dob,
+      gender: personalValues.gender,
+      professionalInfo
+    };
+
+    onRegisterSuccess(finalData);
+  };
+
+  // Step labels for top header
+  const stepsList = [
+    { id: 1, label: "Personal Info" },
+    { id: 2, label: "Provider Type" },
+    { id: 3, label: "Professional Info" },
+    { id: 4, label: "Review" },
+    { id: 5, label: "Verification" }
+  ];
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto animate-fade">
       <div className="flex flex-col items-center py-8 px-6 max-w-3xl mx-auto w-full">
-      {/* Back Button */}
-      <div className="w-full flex justify-start mb-6">
-        <button 
-          onClick={step === 2 ? () => setStep(1) : onBackToRoles}
-          className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-700 text-xs font-bold uppercase transition-all"
-        >
-          <ArrowLeft className="w-4 h-4" /> {step === 2 ? "Back to Step 1" : "Change User Type"}
-        </button>
-      </div>
-
-      <div className="glass-panel w-full bg-white p-8 md:p-10 border border-slate-100 shadow-xl rounded-3xl relative overflow-hidden">
-        {/* Decorative Top Accent */}
-        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-sky-500"></div>
-
-        {/* Stepper Headers */}
-        {!isPatient && (
-          <div className="flex items-center justify-center gap-4 mb-8">
-            <div className="flex items-center gap-2">
-              <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
-                step === 1 ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20' : 'bg-teal-100 text-teal-700'
-              }`}>
-                1
-              </span>
-              <span className={`text-xs font-extrabold ${step === 1 ? 'text-slate-800' : 'text-slate-400'}`}>
-                {isDoctor ? "Personal Info" : "Organization Info"}
-              </span>
-            </div>
-            <div className="h-0.5 w-12 bg-slate-100"></div>
-            <div className="flex items-center gap-2">
-              <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
-                step === 2 ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20' : 'bg-slate-100 text-slate-400'
-              }`}>
-                2
-              </span>
-              <span className={`text-xs font-extrabold ${step === 2 ? 'text-slate-800' : 'text-slate-400'}`}>
-                Professional Details
-              </span>
-            </div>
+        
+        {/* Back Button */}
+        {step < 6 && (
+          <div className="w-full flex justify-start mb-6">
+            <button 
+              onClick={() => {
+                if (step === 1) {
+                  handleBackNavigation();
+                } else {
+                  setStep(prev => prev - 1);
+                }
+              }}
+              className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-700 text-xs font-bold uppercase transition-all"
+            >
+              <ArrowLeft className="w-4 h-4" /> {step === 1 ? "Back to Login" : `Back to Step ${step - 1}`}
+            </button>
           </div>
         )}
 
-        <div className="mb-6">
-          <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
-            {step === 1 ? <User className="w-6 h-6 text-teal-600" /> : <Briefcase className="w-6 h-6 text-teal-600" />}
-            {getRoleTitle()}
-          </h2>
-          <p className="text-slate-500 text-sm mt-1 font-medium">
-            {step === 1 
-              ? "Please provide your primary details to initialize your VIZITO account." 
-              : "Enter your verified clinical and professional details below."}
-          </p>
-        </div>
+        <div className="glass-panel w-full bg-white p-8 md:p-10 border border-slate-100 shadow-xl rounded-3xl relative overflow-hidden">
+          {/* Decorative Top Accent */}
+          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-secondary"></div>
 
-        {step === 1 ? (
-          <form onSubmit={handleStep1Continue} className="space-y-5">
-            {/* Conditional Doctor / Patient Personal Info */}
-            {(isDoctor || isPatient) ? (
-              <div className="form-group">
-                <label className="form-label">Full Name *</label>
-                <input 
-                  type="text" 
-                  className={`form-control ${errors.fullName ? 'border-rose-400' : ''}`}
-                  placeholder="Dr. John Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
-                {errors.fullName && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.fullName}</p>}
-              </div>
-            ) : (
-              // Organization Specific Info
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-group mb-0">
-                  <label className="form-label">Organization Name *</label>
-                  <input 
-                    type="text" 
-                    className={`form-control ${errors.orgName ? 'border-rose-400' : ''}`}
-                    placeholder="e.g. City Care Hospital"
-                    value={orgName}
-                    onChange={(e) => setOrgName(e.target.value)}
-                    required
-                  />
-                  {errors.orgName && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.orgName}</p>}
-                </div>
-                <div className="form-group mb-0">
-                  <label className="form-label">Authorized Person Name *</label>
-                  <input 
-                    type="text" 
-                    className={`form-control ${errors.authorizedPerson ? 'border-rose-400' : ''}`}
-                    placeholder="e.g. Jane Smith (Administrator)"
-                    value={authorizedPerson}
-                    onChange={(e) => setAuthorizedPerson(e.target.value)}
-                    required
-                  />
-                  {errors.authorizedPerson && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.authorizedPerson}</p>}
-                </div>
-              </div>
-            )}
+          {/* Stepper Headers */}
+          {step <= 5 && (
+            <div className="flex items-center justify-between gap-2 mb-8 overflow-x-auto pb-2 scrollbar-none">
+              {stepsList.map((s, idx) => (
+                <React.Fragment key={s.id}>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
+                      step === s.id 
+                        ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20' 
+                        : step > s.id 
+                          ? 'bg-teal-100 text-teal-700' 
+                          : 'bg-slate-100 text-slate-400'
+                    }`}>
+                      {s.id}
+                    </span>
+                    <span className={`text-xs font-extrabold ${step === s.id ? 'text-slate-800' : 'text-slate-400'}`}>
+                      {s.label}
+                    </span>
+                  </div>
+                  {idx < stepsList.length - 1 && (
+                    <div className={`h-0.5 w-6 md:w-10 shrink-0 ${step > s.id ? 'bg-teal-200' : 'bg-slate-100'}`}></div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="form-group mb-0">
-                <label className="form-label">Mobile Number *</label>
-                <div className={`flex items-center border rounded-xl overflow-hidden focus-within:border-teal-500 focus-within:ring-4 focus-within:ring-teal-500/10 transition-all ${errors.mobileNumber ? 'border-rose-450' : 'border-slate-200'}`}>
-                  <span className="px-3.5 py-3 bg-slate-50 border-r border-slate-200 text-slate-500 font-bold text-sm whitespace-nowrap">
-                    +91
+          {/* Step 1: Personal Info Form */}
+          {step === 1 && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+                  <User className="w-6 h-6 text-teal-600" />
+                  Personal Information
+                </h2>
+                <p className="text-slate-500 text-sm mt-1 font-medium">
+                  Please provide your personal details to initialize your provider identity.
+                </p>
+              </div>
+
+              <Formik
+                initialValues={personalValues}
+                validationSchema={step1Schema}
+                onSubmit={(values) => {
+                  setPersonalValues(values);
+                  setStep(2);
+                }}
+              >
+                {({ errors, touched, values, handleChange, handleBlur }) => (
+                  <Form className="space-y-5">
+                    <div className="form-group">
+                      <label className="form-label">Full Name *</label>
+                      <input 
+                        type="text" 
+                        name="fullName"
+                        className={`form-control ${touched.fullName && errors.fullName ? 'border-rose-450' : ''}`}
+                        placeholder="Dr. John Doe / Authorized Representative Name"
+                        value={values.fullName}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                      />
+                      {touched.fullName && errors.fullName && (
+                        <p className="text-rose-500 text-xs mt-1 font-bold">{errors.fullName}</p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="form-group mb-0">
+                        <label className="form-label">Mobile Number *</label>
+                        <div className={`flex items-center border rounded-xl overflow-hidden focus-within:border-teal-500 focus-within:ring-4 focus-within:ring-teal-500/10 transition-all ${
+                          touched.mobileNumber && errors.mobileNumber ? 'border-rose-450' : 'border-slate-200'
+                        }`}>
+                          <span className="px-3.5 py-3 bg-slate-50 border-r border-slate-200 text-slate-500 font-bold text-sm whitespace-nowrap">
+                            +91
+                          </span>
+                          <input 
+                            type="tel" 
+                            name="mobileNumber"
+                            maxLength={10}
+                            className="flex-1 px-4 py-3 text-sm font-semibold text-slate-800 bg-white outline-none placeholder:text-slate-400"
+                            placeholder="98765 43210"
+                            value={values.mobileNumber}
+                            onChange={(e) => {
+                              e.target.value = e.target.value.replace(/\D/g, '');
+                              handleChange(e);
+                            }}
+                            onBlur={handleBlur}
+                          />
+                        </div>
+                        {touched.mobileNumber && errors.mobileNumber && (
+                          <p className="text-rose-500 text-xs mt-1 font-bold">{errors.mobileNumber}</p>
+                        )}
+                      </div>
+
+                      <div className="form-group mb-0">
+                        <label className="form-label">Email Address *</label>
+                        <input 
+                          type="email" 
+                          name="emailAddress"
+                          className={`form-control ${touched.emailAddress && errors.emailAddress ? 'border-rose-450' : ''}`}
+                          placeholder="name@healthcare.com"
+                          value={values.emailAddress}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                        />
+                        {touched.emailAddress && errors.emailAddress && (
+                          <p className="text-rose-500 text-xs mt-1 font-bold">{errors.emailAddress}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="form-group mb-0">
+                        <label className="form-label">Date of Birth *</label>
+                        <input 
+                          type="date" 
+                          name="dob"
+                          className={`form-control ${touched.dob && errors.dob ? 'border-rose-450' : ''}`}
+                          value={values.dob}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                        />
+                        {touched.dob && errors.dob && (
+                          <p className="text-rose-500 text-xs mt-1 font-bold">{errors.dob}</p>
+                        )}
+                      </div>
+
+                      <div className="form-group mb-0">
+                        <label className="form-label">Gender *</label>
+                        <select 
+                          name="gender"
+                          className={`form-control ${touched.gender && errors.gender ? 'border-rose-450' : ''}`}
+                          value={values.gender}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                        {touched.gender && errors.gender && (
+                          <p className="text-rose-500 text-xs mt-1 font-bold">{errors.gender}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <button 
+                      type="submit" 
+                      className="btn btn-primary w-full py-3.5 mt-4"
+                    >
+                      Continue
+                    </button>
+                  </Form>
+                )}
+              </Formik>
+            </div>
+          )}
+
+          {/* Step 2: Provider Category Selection */}
+          {step === 2 && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+                  <Briefcase className="w-6 h-6 text-teal-600" />
+                  Provider Category
+                </h2>
+                <p className="text-slate-500 text-sm mt-1 font-medium">
+                  Identify your type of healthcare provider role. Only one category is allowed.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {categories.map((cat) => {
+                  const Icon = cat.icon;
+                  const isSelected = providerCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setProviderCategory(cat.id)}
+                      className={`text-left p-5 border rounded-2xl transition-all duration-200 ${cat.bgHover} ${
+                        isSelected 
+                          ? 'border-teal-500 bg-teal-50/40 ring-2 ring-teal-500/10 shadow-md shadow-teal-500/5' 
+                          : 'border-slate-200 bg-white'
+                      }`}
+                    >
+                      <div className="flex gap-4">
+                        <div className={`p-3 rounded-xl bg-slate-50 border border-slate-100 ${cat.color} shrink-0`}>
+                          <Icon className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-sm text-slate-800 leading-tight">
+                              {cat.title}
+                            </span>
+                            {isSelected && (
+                              <span className="w-4 h-4 rounded-full bg-teal-600 text-white flex items-center justify-center text-[10px] font-bold">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-slate-500 text-xs font-semibold leading-relaxed mt-1">
+                            {cat.description}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {providerCategory === '' && (
+                <p className="text-rose-500 text-xs font-bold mb-4">Please select a provider category to continue.</p>
+              )}
+
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="btn bg-slate-100 hover:bg-slate-200 text-slate-700 w-1/3 py-3.5 font-bold"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  disabled={providerCategory === ''}
+                  onClick={() => setStep(3)}
+                  className="btn btn-primary flex-1 py-3.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Professional Info (Dynamic Forms) */}
+          {step === 3 && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+                  <Briefcase className="w-6 h-6 text-teal-600" />
+                  Professional Information
+                </h2>
+                <p className="text-slate-500 text-sm mt-1 font-medium">
+                  Provide verified clinical and operations info for your **{getCategoryLabel(providerCategory)}** role.
+                </p>
+              </div>
+
+              <Formik
+                initialValues={step3Values}
+                validationSchema={getStep3Schema()}
+                onSubmit={(values) => {
+                  setStep3Values(values);
+                  setStep(4);
+                }}
+              >
+                {({ errors, touched, values, handleChange, handleBlur }) => (
+                  <Form className="space-y-5">
+                    {/* Doctor Specific Form Fields */}
+                    {providerCategory === 'doctor' && (
+                      <>
+                        <div className="form-group mb-0">
+                          <label className="form-label">Medical Registration Number *</label>
+                          <input 
+                            type="text" 
+                            name="medicalRegNo"
+                            className={`form-control ${touched.medicalRegNo && errors.medicalRegNo ? 'border-rose-450' : ''}`}
+                            placeholder="e.g. MCI-12345"
+                            value={values.medicalRegNo}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                          />
+                          {touched.medicalRegNo && errors.medicalRegNo && (
+                            <p className="text-rose-500 text-xs mt-1 font-bold">{errors.medicalRegNo}</p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="form-group mb-0">
+                            <label className="form-label">Qualification *</label>
+                            <input 
+                              type="text" 
+                              name="qualification"
+                              className={`form-control ${touched.qualification && errors.qualification ? 'border-rose-450' : ''}`}
+                              placeholder="e.g. MBBS, MD (Medicine)"
+                              value={values.qualification}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                            />
+                            {touched.qualification && errors.qualification && (
+                              <p className="text-rose-500 text-xs mt-1 font-bold">{errors.qualification}</p>
+                            )}
+                          </div>
+
+                          <div className="form-group mb-0">
+                            <label className="form-label">Specialization *</label>
+                            <input 
+                              type="text" 
+                              name="specialization"
+                              className={`form-control ${touched.specialization && errors.specialization ? 'border-rose-450' : ''}`}
+                              placeholder="e.g. Cardiologist"
+                              value={values.specialization}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                            />
+                            {touched.specialization && errors.specialization && (
+                              <p className="text-rose-500 text-xs mt-1 font-bold">{errors.specialization}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="form-group mb-0">
+                            <label className="form-label">Years of Experience *</label>
+                            <input 
+                              type="number" 
+                              name="experience"
+                              min={0}
+                              className={`form-control ${touched.experience && errors.experience ? 'border-rose-450' : ''}`}
+                              placeholder="e.g. 8"
+                              value={values.experience}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                            />
+                            {touched.experience && errors.experience && (
+                              <p className="text-rose-500 text-xs mt-1 font-bold">{errors.experience}</p>
+                            )}
+                          </div>
+
+                          <div className="form-group mb-0">
+                            <label className="form-label">Super Specialization (Optional)</label>
+                            <input 
+                              type="text" 
+                              name="superSpecialization"
+                              className="form-control"
+                              placeholder="e.g. Interventional Cardiology"
+                              value={values.superSpecialization}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Languages Known (Optional)</label>
+                          <input 
+                            type="text" 
+                            name="languagesKnown"
+                            className="form-control"
+                            placeholder="e.g. English, Hindi, Telugu"
+                            value={values.languagesKnown}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* Hospital Specific Form Fields */}
+                    {providerCategory === 'hospital' && (
+                      <>
+                        <div className="form-group mb-0">
+                          <label className="form-label">Hospital Name *</label>
+                          <input 
+                            type="text" 
+                            name="hospitalName"
+                            className={`form-control ${touched.hospitalName && errors.hospitalName ? 'border-rose-450' : ''}`}
+                            placeholder="e.g. City Central Hospital"
+                            value={values.hospitalName}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                          />
+                          {touched.hospitalName && errors.hospitalName && (
+                            <p className="text-rose-500 text-xs mt-1 font-bold">{errors.hospitalName}</p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="form-group mb-0">
+                            <label className="form-label">Hospital Registration Number *</label>
+                            <input 
+                              type="text" 
+                              name="hospitalRegNo"
+                              className={`form-control ${touched.hospitalRegNo && errors.hospitalRegNo ? 'border-rose-450' : ''}`}
+                              placeholder="e.g. HOSP-987654"
+                              value={values.hospitalRegNo}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                            />
+                            {touched.hospitalRegNo && errors.hospitalRegNo && (
+                              <p className="text-rose-500 text-xs mt-1 font-bold">{errors.hospitalRegNo}</p>
+                            )}
+                          </div>
+
+                          <div className="form-group mb-0">
+                            <label className="form-label">Authorized Person Name *</label>
+                            <input 
+                              type="text" 
+                              name="authorizedPersonName"
+                              className={`form-control ${touched.authorizedPersonName && errors.authorizedPersonName ? 'border-rose-450' : ''}`}
+                              placeholder="e.g. Jane Smith (Director)"
+                              value={values.authorizedPersonName}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                            />
+                            {touched.authorizedPersonName && errors.authorizedPersonName && (
+                              <p className="text-rose-500 text-xs mt-1 font-bold">{errors.authorizedPersonName}</p>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Clinic Specific Form Fields */}
+                    {providerCategory === 'clinic' && (
+                      <>
+                        <div className="form-group mb-0">
+                          <label className="form-label">Clinic Name *</label>
+                          <input 
+                            type="text" 
+                            name="clinicName"
+                            className={`form-control ${touched.clinicName && errors.clinicName ? 'border-rose-450' : ''}`}
+                            placeholder="e.g. Apex Health Clinic"
+                            value={values.clinicName}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                          />
+                          {touched.clinicName && errors.clinicName && (
+                            <p className="text-rose-500 text-xs mt-1 font-bold">{errors.clinicName}</p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="form-group mb-0">
+                            <label className="form-label">Clinic Registration Number *</label>
+                            <input 
+                              type="text" 
+                              name="clinicRegNo"
+                              className={`form-control ${touched.clinicRegNo && errors.clinicRegNo ? 'border-rose-450' : ''}`}
+                              placeholder="e.g. CLN-445566"
+                              value={values.clinicRegNo}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                            />
+                            {touched.clinicRegNo && errors.clinicRegNo && (
+                              <p className="text-rose-500 text-xs mt-1 font-bold">{errors.clinicRegNo}</p>
+                            )}
+                          </div>
+
+                          <div className="form-group mb-0">
+                            <label className="form-label">Authorized Person Name *</label>
+                            <input 
+                              type="text" 
+                              name="authorizedPersonName"
+                              className={`form-control ${touched.authorizedPersonName && errors.authorizedPersonName ? 'border-rose-450' : ''}`}
+                              placeholder="e.g. Dr. Rayan G. (Lead Physician)"
+                              value={values.authorizedPersonName}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                            />
+                            {touched.authorizedPersonName && errors.authorizedPersonName && (
+                              <p className="text-rose-500 text-xs mt-1 font-bold">{errors.authorizedPersonName}</p>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Pharmacy Specific Form Fields */}
+                    {providerCategory === 'pharmacy' && (
+                      <>
+                        <div className="form-group mb-0">
+                          <label className="form-label">Pharmacy Name *</label>
+                          <input 
+                            type="text" 
+                            name="pharmacyName"
+                            className={`form-control ${touched.pharmacyName && errors.pharmacyName ? 'border-rose-450' : ''}`}
+                            placeholder="e.g. MedPlus Pharmacy"
+                            value={values.pharmacyName}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                          />
+                          {touched.pharmacyName && errors.pharmacyName && (
+                            <p className="text-rose-500 text-xs mt-1 font-bold">{errors.pharmacyName}</p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="form-group mb-0">
+                            <label className="form-label">Drug License Number *</label>
+                            <input 
+                              type="text" 
+                              name="drugLicenseNo"
+                              className={`form-control ${touched.drugLicenseNo && errors.drugLicenseNo ? 'border-rose-450' : ''}`}
+                              placeholder="e.g. DL-992288"
+                              value={values.drugLicenseNo}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                            />
+                            {touched.drugLicenseNo && errors.drugLicenseNo && (
+                              <p className="text-rose-500 text-xs mt-1 font-bold">{errors.drugLicenseNo}</p>
+                            )}
+                          </div>
+
+                          <div className="form-group mb-0">
+                            <label className="form-label">Authorized Person Name *</label>
+                            <input 
+                              type="text" 
+                              name="authorizedPersonName"
+                              className={`form-control ${touched.authorizedPersonName && errors.authorizedPersonName ? 'border-rose-450' : ''}`}
+                              placeholder="e.g. Alex Carter (Store Manager)"
+                              value={values.authorizedPersonName}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                            />
+                            {touched.authorizedPersonName && errors.authorizedPersonName && (
+                              <p className="text-rose-500 text-xs mt-1 font-bold">{errors.authorizedPersonName}</p>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Laboratory Specific Form Fields */}
+                    {providerCategory === 'diagnostic' && (
+                      <>
+                        <div className="form-group mb-0">
+                          <label className="form-label">Laboratory Name *</label>
+                          <input 
+                            type="text" 
+                            name="laboratoryName"
+                            className={`form-control ${touched.laboratoryName && errors.laboratoryName ? 'border-rose-450' : ''}`}
+                            placeholder="e.g. City Diagnostic Laboratory"
+                            value={values.laboratoryName}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                          />
+                          {touched.laboratoryName && errors.laboratoryName && (
+                            <p className="text-rose-500 text-xs mt-1 font-bold">{errors.laboratoryName}</p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="form-group mb-0">
+                            <label className="form-label">Laboratory Registration Number *</label>
+                            <input 
+                              type="text" 
+                              name="laboratoryRegNo"
+                              className={`form-control ${touched.laboratoryRegNo && errors.laboratoryRegNo ? 'border-rose-450' : ''}`}
+                              placeholder="e.g. LAB-112233"
+                              value={values.laboratoryRegNo}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                            />
+                            {touched.laboratoryRegNo && errors.laboratoryRegNo && (
+                              <p className="text-rose-500 text-xs mt-1 font-bold">{errors.laboratoryRegNo}</p>
+                            )}
+                          </div>
+
+                          <div className="form-group mb-0">
+                            <label className="form-label">Authorized Person Name *</label>
+                            <input 
+                              type="text" 
+                              name="authorizedPersonName"
+                              className={`form-control ${touched.authorizedPersonName && errors.authorizedPersonName ? 'border-rose-450' : ''}`}
+                              placeholder="e.g. Dr. Linda H. (Chief Pathologist)"
+                              value={values.authorizedPersonName}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                            />
+                            {touched.authorizedPersonName && errors.authorizedPersonName && (
+                              <p className="text-rose-500 text-xs mt-1 font-bold">{errors.authorizedPersonName}</p>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Generic / Home Care / Ambulance / Equipment Specific Fields */}
+                    {(providerCategory === 'homecare' || providerCategory === 'ambulance' || providerCategory === 'equipment') && (
+                      <>
+                        <div className="form-group mb-0">
+                          <label className="form-label">Organization Name *</label>
+                          <input 
+                            type="text" 
+                            name="organizationName"
+                            className={`form-control ${touched.organizationName && errors.organizationName ? 'border-rose-450' : ''}`}
+                            placeholder="e.g. Portea Home Care / Fast-Response Ambulance / Rent-A-Med"
+                            value={values.organizationName}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                          />
+                          {touched.organizationName && errors.organizationName && (
+                            <p className="text-rose-500 text-xs mt-1 font-bold">{errors.organizationName}</p>
+                          )}
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Authorized Person Name *</label>
+                          <input 
+                            type="text" 
+                            name="authorizedPersonName"
+                            className={`form-control ${touched.authorizedPersonName && errors.authorizedPersonName ? 'border-rose-450' : ''}`}
+                            placeholder="e.g. Robert Miller (General Administrator)"
+                            value={values.authorizedPersonName}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                          />
+                          {touched.authorizedPersonName && errors.authorizedPersonName && (
+                            <p className="text-rose-500 text-xs mt-1 font-bold">{errors.authorizedPersonName}</p>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    <div className="flex gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setStep(2)}
+                        className="btn bg-slate-100 hover:bg-slate-200 text-slate-700 w-1/3 py-3.5 font-bold"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn btn-primary flex-1 py-3.5"
+                      >
+                        Continue
+                      </button>
+                    </div>
+                  </Form>
+                )}
+              </Formik>
+            </div>
+          )}
+
+          {/* Step 4: Review Screen */}
+          {step === 4 && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+                  <CheckCircle2 className="w-6 h-6 text-teal-600" />
+                  Review Registration
+                </h2>
+                <p className="text-slate-500 text-sm mt-1 font-medium">
+                  Review all details before submitting for OTP verification.
+                </p>
+              </div>
+
+              <div className="space-y-6 mb-6">
+                {/* 1. Personal Info Section */}
+                <div className="p-5 bg-slate-50 border border-slate-100 rounded-2xl relative">
+                  <button 
+                    onClick={() => setStep(1)}
+                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-teal-600 rounded-lg hover:bg-white border border-transparent hover:border-slate-150 transition-all"
+                    title="Edit Personal Information"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <h3 className="font-extrabold text-xs text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <User className="w-3.5 h-3.5 text-slate-400" />
+                    Personal Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
+                    <div>
+                      <span className="text-xs font-bold text-slate-400 block">Full Name</span>
+                      <span className="text-sm font-semibold text-slate-800">{personalValues.fullName}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-400 block">Mobile Number</span>
+                      <span className="text-sm font-semibold text-slate-800">+91 {personalValues.mobileNumber}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-400 block">Email Address</span>
+                      <span className="text-sm font-semibold text-slate-800">{personalValues.emailAddress}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-400 block">Date of Birth / Gender</span>
+                      <span className="text-sm font-semibold text-slate-800">{personalValues.dob} / {personalValues.gender}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Provider Category Section */}
+                <div className="p-5 bg-slate-50 border border-slate-100 rounded-2xl relative">
+                  <button 
+                    onClick={() => setStep(2)}
+                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-teal-600 rounded-lg hover:bg-white border border-transparent hover:border-slate-150 transition-all"
+                    title="Edit Category"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <h3 className="font-extrabold text-xs text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <Briefcase className="w-3.5 h-3.5 text-slate-400" />
+                    Provider Category
+                  </h3>
+                  <span className="inline-flex bg-teal-50 text-teal-800 text-xs font-black px-3.5 py-1.5 rounded-xl border border-teal-100 mt-1 uppercase tracking-wider">
+                    {getCategoryLabel(providerCategory)}
                   </span>
-                  <input 
-                    type="tel" 
-                    maxLength={10}
-                    className="flex-1 px-4 py-3 text-sm font-semibold text-slate-800 bg-white outline-none placeholder:text-slate-400"
-                    placeholder="98765 43210"
-                    value={mobileNumber}
-                    onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ''))}
-                    required
-                  />
                 </div>
-                {errors.mobileNumber && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.mobileNumber}</p>}
+
+                {/* 3. Professional Info Section */}
+                <div className="p-5 bg-slate-50 border border-slate-100 rounded-2xl relative">
+                  <button 
+                    onClick={() => setStep(3)}
+                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-teal-600 rounded-lg hover:bg-white border border-transparent hover:border-slate-150 transition-all"
+                    title="Edit Professional Information"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <h3 className="font-extrabold text-xs text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <ShieldAlert className="w-3.5 h-3.5 text-slate-400" />
+                    Professional Details
+                  </h3>
+
+                  {providerCategory === 'doctor' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Medical Registration Number</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.medicalRegNo}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Qualification / Specialization</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.qualification} ({step3Values.specialization})</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Years of Experience</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.experience} Years</span>
+                      </div>
+                      {(step3Values.superSpecialization || step3Values.languagesKnown) && (
+                        <div>
+                          <span className="text-xs font-bold text-slate-400 block">Super Specialization / Languages</span>
+                          <span className="text-sm font-semibold text-slate-800">
+                            {step3Values.superSpecialization || '-'} / {step3Values.languagesKnown || '-'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {providerCategory === 'hospital' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Hospital Name</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.hospitalName}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Hospital Registration Number</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.hospitalRegNo}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Authorized Representative</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.authorizedPersonName}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {providerCategory === 'clinic' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Clinic Name</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.clinicName}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Clinic Registration Number</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.clinicRegNo}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Authorized Representative</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.authorizedPersonName}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {providerCategory === 'pharmacy' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Pharmacy Name</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.pharmacyName}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Drug License Number</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.drugLicenseNo}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Authorized Representative</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.authorizedPersonName}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {providerCategory === 'diagnostic' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Laboratory Name</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.laboratoryName}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Laboratory Registration Number</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.laboratoryRegNo}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Authorized Representative</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.authorizedPersonName}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {(providerCategory === 'homecare' || providerCategory === 'ambulance' || providerCategory === 'equipment') && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Organization Name</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.organizationName}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 block">Authorized Representative</span>
+                        <span className="text-sm font-semibold text-slate-800">{step3Values.authorizedPersonName}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="form-group mb-0">
-                <label className="form-label">Email Address *</label>
-                <input 
-                  type="email" 
-                  className={`form-control ${errors.emailAddress ? 'border-rose-400' : ''}`}
-                  placeholder="name@healthcare.com"
-                  value={emailAddress}
-                  onChange={(e) => setEmailAddress(e.target.value)}
-                  required
-                />
-                {errors.emailAddress && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.emailAddress}</p>}
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="btn bg-slate-100 hover:bg-slate-200 text-slate-700 w-1/3 py-3.5 font-bold"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(5)}
+                  className="btn btn-primary flex-1 py-3.5"
+                >
+                  Submit Registration
+                </button>
               </div>
             </div>
+          )}
 
-            {(isDoctor || isPatient) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-group mb-0">
-                  <label className="form-label">Date of Birth *</label>
-                  <input 
-                    type="date" 
-                    className={`form-control ${errors.dob ? 'border-rose-400' : ''}`}
-                    value={dob}
-                    onChange={(e) => setDob(e.target.value)}
-                    required
-                  />
-                  {errors.dob && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.dob}</p>}
+          {/* Step 5: OTP Verification Screen */}
+          {step === 5 && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+                  <Smartphone className="w-6 h-6 text-teal-600" />
+                  OTP Verification
+                </h2>
+                <p className="text-slate-500 text-sm mt-1 font-medium">
+                  We have simulated sending verification codes to your mobile **+91 {personalValues.mobileNumber}** and email **{personalValues.emailAddress}**.
+                </p>
+              </div>
+
+              {/* Demo Helper Banner */}
+              <div className="mb-6 p-4 rounded-xl bg-teal-50 border border-teal-100 text-teal-800 text-xs font-bold leading-relaxed flex items-start gap-2">
+                <ShieldAlert className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="block font-black text-[13px] text-teal-950 mb-0.5">Simulated Verification Codes:</span>
+                  <span className="block">Mobile OTP: <strong className="text-teal-900 bg-white border border-teal-200 px-1.5 py-0.5 rounded text-[13px]">123456</strong></span>
+                  <span className="block mt-1">Email OTP: <strong className="text-teal-900 bg-white border border-teal-200 px-1.5 py-0.5 rounded text-[13px]">654321</strong></span>
+                </div>
+              </div>
+
+              <form onSubmit={handleVerifyOtp} className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="form-group mb-0">
+                    <label className="form-label flex items-center gap-2">
+                      <Smartphone className="w-4 h-4 text-slate-500" />
+                      Mobile OTP *
+                    </label>
+                    <input 
+                      type="text" 
+                      maxLength={6}
+                      className="form-control tracking-widest text-center text-lg font-black"
+                      placeholder="XXXXXX"
+                      value={mobileOtpInput}
+                      onChange={(e) => setMobileOtpInput(e.target.value.replace(/\D/g, ''))}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group mb-0">
+                    <label className="form-label flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-slate-500" />
+                      Email OTP *
+                    </label>
+                    <input 
+                      type="text" 
+                      maxLength={6}
+                      className="form-control tracking-widest text-center text-lg font-black"
+                      placeholder="XXXXXX"
+                      value={emailOtpInput}
+                      onChange={(e) => setEmailOtpInput(e.target.value.replace(/\D/g, ''))}
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div className="form-group mb-0">
-                  <label className="form-label">Gender *</label>
-                  <select 
-                    className={`form-control ${errors.gender ? 'border-rose-400' : ''}`}
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value)}
-                    required
+                {otpErrors && (
+                  <p className="text-rose-500 text-xs font-bold text-center mt-2 animate-bounce">{otpErrors}</p>
+                )}
+
+                {otpSent && (
+                  <div className="text-center text-xs font-bold text-slate-400 mt-2">
+                    {resendCountdown > 0 ? (
+                      <span>Resend OTP available in {resendCountdown}s</span>
+                    ) : (
+                      <button 
+                        type="button"
+                        onClick={handleResendOtp}
+                        className="text-teal-600 hover:text-teal-700 hover:underline cursor-pointer"
+                      >
+                        Resend OTP Codes
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setStep(4)}
+                    className="btn bg-slate-100 hover:bg-slate-200 text-slate-700 w-1/3 py-3.5 font-bold"
                   >
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  {errors.gender && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.gender}</p>}
-                </div>
-              </div>
-            )}
-
-            <button 
-              type="submit" 
-              className="btn btn-primary w-full py-3.5 mt-4"
-            >
-              {isPatient ? "Submit Registration" : "Continue to Professional Info"}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Step 2: Doctor Specific Fields */}
-            {isDoctor && (
-              <>
-                <div className="form-group mb-0">
-                  <label className="form-label">Medical Registration Number *</label>
-                  <input 
-                    type="text" 
-                    className={`form-control ${errors.medicalRegNo ? 'border-rose-400' : ''}`}
-                    placeholder="e.g. MCI-12345"
-                    value={medicalRegNo}
-                    onChange={(e) => setMedicalRegNo(e.target.value)}
-                    required
-                  />
-                  {errors.medicalRegNo && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.medicalRegNo}</p>}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="form-group mb-0">
-                    <label className="form-label">Qualification *</label>
-                    <input 
-                      type="text" 
-                      className={`form-control ${errors.qualification ? 'border-rose-400' : ''}`}
-                      placeholder="e.g. MBBS, MD"
-                      value={qualification}
-                      onChange={(e) => setQualification(e.target.value)}
-                      required
-                    />
-                    {errors.qualification && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.qualification}</p>}
-                  </div>
-
-                  <div className="form-group mb-0">
-                    <label className="form-label">Specialization *</label>
-                    <input 
-                      type="text" 
-                      className={`form-control ${errors.specialization ? 'border-rose-400' : ''}`}
-                      placeholder="e.g. Cardiologist"
-                      value={specialization}
-                      onChange={(e) => setSpecialization(e.target.value)}
-                      required
-                    />
-                    {errors.specialization && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.specialization}</p>}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="form-group mb-0">
-                    <label className="form-label">Experience (Years) *</label>
-                    <input 
-                      type="number" 
-                      min={0}
-                      className={`form-control ${errors.experience ? 'border-rose-400' : ''}`}
-                      placeholder="e.g. 10"
-                      value={experience}
-                      onChange={(e) => setExperience(e.target.value)}
-                      required
-                    />
-                    {errors.experience && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.experience}</p>}
-                  </div>
-
-                  <div className="form-group mb-0">
-                    <label className="form-label">Languages Known (Optional)</label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      placeholder="e.g. English, Hindi, Spanish"
-                      value={languagesKnown}
-                      onChange={(e) => setLanguagesKnown(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Consultation Type</label>
-                  <select 
-                    className="form-control"
-                    value={consultationType}
-                    onChange={(e) => setConsultationType(e.target.value)}
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary flex-1 py-3.5"
                   >
-                    <option value="Online">Online Consultation</option>
-                    <option value="In-Clinic">In-Clinic Consultation</option>
-                    <option value="Both">Both (Online & In-Clinic)</option>
-                  </select>
+                    Verify & Create Account
+                  </button>
                 </div>
-              </>
-            )}
+              </form>
+            </div>
+          )}
 
-            {/* Dynamic Org Types */}
-            {role === 'hospital' && (
-              <>
-                <div className="form-group mb-0">
-                  <label className="form-label">Hospital Registration Number *</label>
-                  <input 
-                    type="text" 
-                    className={`form-control ${errors.hospitalRegNo ? 'border-rose-400' : ''}`}
-                    placeholder="e.g. HOSP-9876"
-                    value={hospitalRegNo}
-                    onChange={(e) => setHospitalRegNo(e.target.value)}
-                    required
-                  />
-                  {errors.hospitalRegNo && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.hospitalRegNo}</p>}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="form-group mb-0">
-                    <label className="form-label">Number of Beds</label>
-                    <input 
-                      type="number" 
-                      className="form-control"
-                      placeholder="e.g. 150"
-                      value={numBeds}
-                      onChange={(e) => setNumBeds(e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group mb-0">
-                    <label className="form-label">Departments</label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      placeholder="e.g. ICU, Cardiology, ER, Paediatrics"
-                      value={departments}
-                      onChange={(e) => setDepartments(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
+          {/* Step 6: Registration Success Screen */}
+          {step === 6 && (
+            <div className="text-center animate-fade">
+              {/* Decorative Top Accent */}
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-secondary"></div>
 
-            {role === 'clinic' && (
-              <>
-                <div className="form-group mb-0">
-                  <label className="form-label">Clinic Registration Number *</label>
-                  <input 
-                    type="text" 
-                    className={`form-control ${errors.clinicRegNo ? 'border-rose-400' : ''}`}
-                    placeholder="e.g. CLN-8822"
-                    value={clinicRegNo}
-                    onChange={(e) => setClinicRegNo(e.target.value)}
-                    required
-                  />
-                  {errors.clinicRegNo && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.clinicRegNo}</p>}
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full bg-teal-500/10 animate-ping"></div>
+                  <span className="relative block p-4 rounded-full bg-teal-50 border border-teal-100 shadow-sm">
+                    <CheckCircle2 className="w-16 h-16 text-teal-600" />
+                  </span>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Clinic Type</label>
-                  <input 
-                    type="text" 
-                    className="form-control"
-                    placeholder="e.g. Dental, Paediatric, General Checkup"
-                    value={clinicType}
-                    onChange={(e) => setClinicType(e.target.value)}
-                  />
-                </div>
-              </>
-            )}
-
-            {role === 'pharmacy' && (
-              <div className="form-group mb-0">
-                <label className="form-label">Drug License Number *</label>
-                <input 
-                  type="text" 
-                  className={`form-control ${errors.drugLicenseNo ? 'border-rose-400' : ''}`}
-                  placeholder="e.g. DL-66778"
-                  value={drugLicenseNo}
-                  onChange={(e) => setDrugLicenseNo(e.target.value)}
-                  required
-                />
-                {errors.drugLicenseNo && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.drugLicenseNo}</p>}
               </div>
-            )}
 
-            {role === 'diagnostic' && (
-              <div className="form-group mb-0">
-                <label className="form-label">Diagnostic Center Registration Number *</label>
-                <input 
-                  type="text" 
-                  className={`form-control ${errors.diagRegNo ? 'border-rose-400' : ''}`}
-                  placeholder="e.g. DIAG-2234"
-                  value={diagRegNo}
-                  onChange={(e) => setDiagRegNo(e.target.value)}
-                  required
-                />
-                {errors.diagRegNo && <p className="text-rose-500 text-xs mt-1 font-bold">{errors.diagRegNo}</p>}
+              <h2 className="text-3xl font-black text-slate-800">
+                Welcome to Vizito!
+              </h2>
+              <p className="text-teal-600 font-bold text-lg mt-2">
+                Your provider account has been created successfully.
+              </p>
+              
+              <div className="max-w-md mx-auto">
+                <p className="text-slate-500 mt-4 leading-relaxed text-sm font-medium">
+                  You can now log in and complete your organization profile, verification documents, KYC, bank details, and other information from your Provider Workspace.
+                </p>
+
+                <div className="my-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-800 text-xs font-bold leading-relaxed flex items-start gap-2 text-left">
+                  <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <span>Organization setup, KYC, bank details, profile completion, and verification are completed inside the workspace after your first login.</span>
+                </div>
+
+                <button 
+                  onClick={handleFinalSubmit}
+                  className="btn btn-primary w-full py-4 shadow-lg shadow-teal-600/25 mt-2"
+                >
+                  Login to Workspace
+                </button>
               </div>
-            )}
-
-            {role === 'homecare' && (
-              <div className="form-group">
-                <label className="form-label">Services Offered</label>
-                <input 
-                  type="text" 
-                  className="form-control"
-                  placeholder="e.g. Geriatric Care, Post-Stroke Rehab, Physiotherapy"
-                  value={servicesOffered}
-                  onChange={(e) => setServicesOffered(e.target.value)}
-                />
-              </div>
-            )}
-
-            {role === 'ambulance' && (
-              <div className="form-group">
-                <label className="form-label">Fleet Size (Number of Emergency Vehicles)</label>
-                <input 
-                  type="number" 
-                  className="form-control"
-                  placeholder="e.g. 15"
-                  value={fleetSize}
-                  onChange={(e) => setFleetSize(e.target.value)}
-                />
-              </div>
-            )}
-
-            <button 
-              type="submit" 
-              className="btn btn-primary w-full py-3.5 mt-4 animate-pulse"
-            >
-              Submit Registration
-            </button>
-          </form>
-        )}
-      </div>
-      </div>
-    </div>
-  );
-}
-
-// Sub-component for Successful registration screen
-interface RegistrationSuccessProps {
-  role: UserRole;
-  fullName: string;
-  onGoToDashboard: () => void;
-}
-
-export function RegistrationSuccess({ role, fullName, onGoToDashboard }: RegistrationSuccessProps) {
-  return (
-    <div className="flex-1 min-h-0 overflow-y-auto flex flex-col px-6 w-full animate-fade">
-      <div className="flex flex-col items-center max-w-xl mx-auto w-full my-auto py-8">
-        <div className="glass-panel w-full bg-white p-10 border border-slate-100 shadow-xl rounded-3xl text-center relative overflow-hidden">
-        {/* Pulsing visual circles */}
-        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
-
-        <div className="flex justify-center mb-6">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-emerald-500/10 animate-ping"></div>
-            <span className="relative block p-4 rounded-full bg-emerald-50 border border-emerald-100 shadow-sm">
-              <CheckCircle2 className="w-16 h-16 text-emerald-500" />
-            </span>
-          </div>
+            </div>
+          )}
         </div>
-
-        <h2 className="text-3xl font-black text-slate-800">
-          Registration Successful!
-        </h2>
-        <p className="text-teal-600 font-bold text-lg mt-2">
-          Welcome to VIZITO, {fullName}.
-        </p>
-        <span className="inline-block bg-teal-50 text-teal-800 text-xs font-extrabold px-3.5 py-1 rounded-full uppercase tracking-wider mt-1.5 mb-2.5">
-          Role: {role}
-        </span>
-
-        <p className="text-slate-500 mt-4 leading-relaxed text-sm font-medium">
-          Your provider account has been initialized successfully. You can begin exploring the platform and utilizing appointment management modules immediately.
-        </p>
-
-        <div className="my-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-800 text-xs font-bold leading-relaxed flex items-start gap-2 text-left">
-          <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <span>Complete your Address details, verification documents upload, and Bank KYC inside the dashboard settings to activate settlement transfers and withdrawals.</span>
-        </div>
-
-        <button 
-          onClick={onGoToDashboard}
-          className="btn btn-primary w-full py-4 shadow-lg shadow-teal-600/25 mt-2"
-        >
-          Go to Dashboard
-        </button>
-      </div>
       </div>
     </div>
   );
