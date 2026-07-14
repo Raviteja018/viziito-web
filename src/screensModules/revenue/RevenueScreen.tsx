@@ -20,7 +20,8 @@ import {
   Check,
   Search,
   Loader2,
-  FileText
+  FileText,
+  SlidersHorizontal
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 

@@ -292,10 +292,6 @@ export default function SettingsScreen() {
     if (row === 'alerts') {
       const current = notifMatrix.alerts;
       const nextVal = !current[col];
-      const activeCount = (col === 'inApp' ? nextVal : current.inApp) ? 1 : 0 +
-                          (col === 'email' ? nextVal : current.email) ? 1 : 0 +
-                          (col === 'sms' ? nextVal : current.sms) ? 1 : 0;
-      
       // If turning off makes count 0
       const activeChannels = [
         col === 'inApp' ? nextVal : current.inApp,
