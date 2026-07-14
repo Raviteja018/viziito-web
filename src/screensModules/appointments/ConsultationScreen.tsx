@@ -124,9 +124,73 @@ export default function ConsultationScreen() {
   const [showHistoryMore, setShowHistoryMore] = useState(false);
   const [showEndModal, setShowEndModal] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
 
-  const apt = APPOINTMENT;
-  const p = apt.patient;
+  // ── Load real appointment from localStorage ──────────────────────────────
+  const [liveApt, setLiveApt] = useState<any | null>(null);
+
+  useEffect(() => {
+    try {
+      const all: any[] = JSON.parse(localStorage.getItem('vizito_appointments') ?? '[]');
+      const found = all.find((a: any) => a.id === appointmentId) ?? null;
+      if (found) {
+        setLiveApt(found);
+        // Pre-populate fields from previously saved consultation data
+        setNotes(found.clinicalNotes ?? '');
+        setPlan(found.plan ?? '');
+        setSelectedDiagnoses(found.diagnosesCodes ?? []);
+      }
+    } catch {
+      // fall back to mock data
+    }
+  }, [appointmentId]);
+
+  // ── Helper: save consultation data to localStorage ───────────────────────
+  const saveConsultationData = (markCompleted = false) => {
+    try {
+      const all: any[] = JSON.parse(localStorage.getItem('vizito_appointments') ?? '[]');
+      const updated = all.map((a: any) => {
+        if (a.id !== appointmentId) return a;
+        const timelineEntry = markCompleted
+          ? { label: 'Consultation Completed', time: new Date().toLocaleString() }
+          : { label: 'Consultation Draft Saved', time: new Date().toLocaleString() };
+        return {
+          ...a,
+          clinicalNotes: notes,
+          plan,
+          diagnosesCodes: selectedDiagnoses,
+          diagnosis: selectedDiagnoses.join(', '),
+          status: markCompleted ? 'Completed' : (a.status === 'Pending' ? 'Consultation Started' : a.status),
+          timeline: [...(a.timeline ?? []), timelineEntry],
+        };
+      });
+      localStorage.setItem('vizito_appointments', JSON.stringify(updated));
+      setSavedToast(true);
+      setTimeout(() => setSavedToast(false), 2500);
+    } catch {
+      // silently ignore
+    }
+  };
+
+  // Use live appointment if found, otherwise fall back to mock
+  const apt = liveApt ?? APPOINTMENT;
+  const p = liveApt
+    ? {
+        name: liveApt.patient ?? 'Unknown',
+        initials: liveApt.initials ?? '?',
+        avatarColor: liveApt.avatarColor ?? 'bg-slate-100 text-slate-600',
+        age: liveApt.age ?? 0,
+        gender: liveApt.gender === 'M' ? 'Male' : liveApt.gender === 'F' ? 'Female' : 'Unknown',
+        phone: liveApt.phone ?? '',
+        email: '',
+        patientId: liveApt.patientId ?? '',
+        allergies: 'N/A',
+        bloodGroup: 'N/A',
+        height: 'N/A',
+        weight: 'N/A',
+        maritalStatus: 'N/A',
+      }
+    : APPOINTMENT.patient;
 
   const toggleDiagnosis = (code: string) => {
     setSelectedDiagnoses(prev =>
@@ -531,11 +595,16 @@ export default function ConsultationScreen() {
       {/* ─── Bottom Action Bar ────────────────────────────────────────────── */}
       <div className="bg-white border-t border-slate-200 px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-8 sm:pb-4">
         <div className="flex items-center justify-center gap-2 order-2 sm:order-1">
-          <CheckCircle2 className="w-4 h-4 text-teal-500" />
-          <span className="text-xs text-slate-500 font-medium">All changes are saved automatically</span>
+          <CheckCircle2 className={`w-4 h-4 transition-colors ${savedToast ? 'text-teal-600' : 'text-slate-300'}`} />
+          <span className={`text-xs font-medium transition-colors ${savedToast ? 'text-teal-600' : 'text-slate-400'}`}>
+            {savedToast ? 'Saved successfully!' : 'Unsaved changes'}
+          </span>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto order-1 sm:order-2">
-          <button className="flex items-center gap-2 text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold transition-all">
+          <button
+            onClick={() => saveConsultationData(false)}
+            className="flex items-center gap-2 text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+          >
             <Save className="w-4 h-4" />
             Save as Draft
           </button>
@@ -543,7 +612,10 @@ export default function ConsultationScreen() {
             <Printer className="w-4 h-4" />
             Print Notes
           </button>
-          <button className="flex items-center justify-center w-full sm:w-auto gap-2 bg-teal-700 hover:bg-teal-800 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95">
+          <button
+            onClick={() => { saveConsultationData(true); setTimeout(() => navigate('/appointments'), 600); }}
+            className="flex items-center justify-center w-full sm:w-auto gap-2 bg-teal-700 hover:bg-teal-800 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95"
+          >
             <CheckCircle2 className="w-4 h-4" />
             <div className="text-left hidden sm:block">
               <div>Complete Consultation</div>
@@ -563,7 +635,7 @@ export default function ConsultationScreen() {
             </div>
             <h3 className="text-base font-bold text-slate-800 text-center mb-1">End Consultation?</h3>
             <p className="text-sm text-slate-500 text-center mb-5">
-              Are you sure you want to end this consultation? Make sure all notes are saved.
+              Are you sure you want to end this consultation? Your notes will be saved as a draft.
             </p>
             <div className="flex gap-3">
               <button
@@ -573,7 +645,7 @@ export default function ConsultationScreen() {
                 Cancel
               </button>
               <button
-                onClick={() => navigate('/appointments')}
+                onClick={() => { saveConsultationData(false); navigate('/appointments'); }}
                 className="flex-1 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-sm font-bold transition-colors"
               >
                 End Consultation

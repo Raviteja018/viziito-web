@@ -26,6 +26,7 @@ import PrescriptionsScreen from '../screensModules/prescriptions/PrescriptionsSc
 import PatientsScreen from '../screensModules/patients/PatientsScreen';
 import PatientDetailScreen from '../screensModules/patients/PatientDetailScreen';
 import RevenueScreen from '../screensModules/revenue/RevenueScreen';
+import TransactionsScreen from '../screensModules/transactions/TransactionsScreen';
 import AvailabilityScreen from '../screensModules/availability/AvailabilityScreen';
 import ReviewsScreen from '../screensModules/reviews/ReviewsScreen';
 import NotificationsScreen from '../screensModules/notifications/NotificationsScreen';
@@ -144,6 +145,7 @@ const AppNavigator = () => {
         <Route path="/patients/:patientId" element={<PatientDetailScreen />} />
         <Route path="/prescriptions" element={<PrescriptionsScreen />} />
         <Route path="/revenue" element={<RevenueScreen />} />
+        <Route path="/transactions" element={<TransactionsScreen />} />
         <Route path="/availability" element={<AvailabilityScreen />} />
         <Route path="/reviews" element={<ReviewsScreen />} />
         <Route path="/notifications" element={<NotificationsScreen />} />

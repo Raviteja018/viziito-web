@@ -96,7 +96,13 @@ export default function CreateAppointmentScreen() {
   const [location, setLocation] = useState('Banjarahills Clinic');
   const [consultationType, setConsultationType] = useState('In-Clinic Consultation');
   const [provider] = useState('Dr. Arjun Reddy');
-  const [appointmentDate, setAppointmentDate] = useState('2025-05-28');
+  const [appointmentDate, setAppointmentDate] = useState(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  });
   const [appointmentTime, setAppointmentTime] = useState('11:30 AM');
   const [duration, setDuration] = useState('30 Minutes');
   const [mode, setMode] = useState<'in-clinic' | 'online'>('in-clinic');
@@ -458,7 +464,85 @@ export default function CreateAppointmentScreen() {
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
             <button
               onClick={() => {
-                alert('Appointment created successfully!');
+                // ── Build display date string ("DD MMM YYYY") ──
+                const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                const dateParts = appointmentDate.split('-');
+                const displayDate = dateParts.length === 3
+                  ? `${parseInt(dateParts[2], 10)} ${MONTHS[parseInt(dateParts[1], 10) - 1]} ${dateParts[0]}`
+                  : appointmentDate;
+
+                // ── Map consultation type ──
+                const typeMap: Record<string, string> = {
+                  'In-Clinic Consultation': 'In-Clinic',
+                  'Video Consultation': 'Video Consultation',
+                  'Home Visit': 'Home Visit',
+                };
+                const mappedType = (typeMap[consultationType] ?? consultationType) as
+                  'Walk-In' | 'In-Clinic' | 'Video Consultation' | 'Home Visit';
+
+                // ── Map payment mode ──
+                const paymentStatusMap: Record<string, string> = {
+                  'Patient Pays Online': 'Pending',
+                  'Pay at Clinic': 'Pending',
+                  'Insurance': 'Pending',
+                  'Free Consultation': 'Waived',
+                };
+                const paymentStatus = (paymentStatusMap[paymentMode] ?? 'Pending') as
+                  'Paid' | 'Pending' | 'Waived';
+
+                // ── Generate a unique ID ──
+                const existing: any[] = (() => {
+                  try { return JSON.parse(localStorage.getItem('vizito_appointments') ?? '[]'); }
+                  catch { return []; }
+                })();
+                const maxId = existing.reduce((max: number, a: any) => {
+                  const num = parseInt((a.id ?? '').replace(/\D/g, ''), 10);
+                  return isNaN(num) ? max : Math.max(max, num);
+                }, 0);
+                const newId = `APT-${new Date().getFullYear()}-${String(maxId + 1).padStart(4, '0')}`;
+
+                // ── Build patient initials ──
+                const nameParts = selectedPatient?.name?.split(' ') ?? ['?'];
+                const initials = nameParts.length >= 2
+                  ? nameParts[0][0] + nameParts[nameParts.length - 1][0]
+                  : nameParts[0][0] ?? '?';
+
+                const COLORS = [
+                  'bg-teal-100 text-teal-700', 'bg-pink-100 text-pink-700',
+                  'bg-blue-100 text-blue-700', 'bg-purple-100 text-purple-700',
+                  'bg-amber-100 text-amber-700', 'bg-green-100 text-green-700',
+                ];
+                const avatarColor = COLORS[maxId % COLORS.length];
+
+                // ── Assemble new appointment ──
+                const newAppointment = {
+                  id: newId,
+                  patient: selectedPatient?.name ?? 'Unknown',
+                  initials: initials.toUpperCase(),
+                  avatarColor,
+                  gender: 'M' as const,
+                  age: 0,
+                  patientId: selectedPatient?.id ?? 'N/A',
+                  phone: mobileNumber || selectedPatient?.phone || '',
+                  date: displayDate,
+                  time: appointmentTime,
+                  type: mappedType,
+                  location,
+                  status: 'Confirmed' as const,
+                  paymentStatus,
+                  amount: parseInt(fee, 10) || 0,
+                  reason,
+                  notes,
+                  timeline: [
+                    { label: 'Appointment Created', time: new Date().toLocaleString() }
+                  ],
+                  documents: [],
+                };
+
+                // ── Persist to localStorage ──
+                const updated = [...existing, newAppointment];
+                localStorage.setItem('vizito_appointments', JSON.stringify(updated));
+
                 navigate('/appointments');
               }}
               className="w-full flex items-center justify-center gap-2 bg-teal-700 hover:bg-teal-800 text-white py-3 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95"

@@ -129,7 +129,7 @@ const ProfileLayout = () => {
                   <circle cx="50" cy="50" r={radius} fill="none" stroke="#e2e8f0" strokeWidth="8" />
                   <circle
                     cx="50" cy="50" r={radius} fill="none"
-                    stroke="#0d9488" strokeWidth="8"
+                    stroke="#7C3AED" strokeWidth="8"
                     strokeDasharray={circumference}
                     strokeDashoffset={offset}
                     strokeLinecap="round"

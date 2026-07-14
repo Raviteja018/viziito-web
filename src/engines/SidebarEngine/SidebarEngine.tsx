@@ -43,6 +43,7 @@ const allNavItems = [
     { name: 'Prescription Management', path: '/prescriptions', icon: FileText, roles: ['doctor'] },
     { name: 'Patient Management', path: '/patients', icon: Users, roles: ['doctor', 'clinic', 'hospital'] },
     { name: 'Revenue & Settlement', path: '/revenue', icon: Wallet, roles: ['doctor', 'clinic', 'hospital', 'pharmacy', 'diagnostic', 'homecare', 'ambulance'] },
+    { name: 'Transactions', path: '/transactions', icon: ClipboardList, roles: ['doctor', 'clinic'] },
     { name: 'Availability Management', path: '/availability', icon: Clock, roles: ['doctor'] },
     { name: 'Reviews & Ratings', path: '/reviews', icon: Star, roles: ['doctor', 'clinic', 'hospital', 'pharmacy', 'diagnostic', 'homecare', 'ambulance'] },
     { name: 'Notifications', path: '/notifications', icon: Bell, roles: ['doctor', 'clinic', 'hospital', 'pharmacy', 'diagnostic', 'homecare', 'ambulance'], badge: 8 },
@@ -132,8 +133,8 @@ const SidebarEngine: React.FC<SidebarEngineProps> = ({ isOpen = false, onClose }
                             onClick={onClose}
                             className={({ isActive }) =>
                                 `flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-150 group ${isActive
-                                    ? 'bg-[#FAF1E5] text-[#F2AC4A] font-bold shadow-xs'
-                                    : 'text-[#5F6368] hover:bg-[#FDF9F6] font-medium'
+                                    ? 'bg-[#F3E8FF] text-[#7C3AED] font-bold shadow-xs'
+                                    : 'text-[#5F6368] hover:bg-[#FAF5FF] font-medium'
                                 }`
                             }
                         >
@@ -141,12 +142,12 @@ const SidebarEngine: React.FC<SidebarEngineProps> = ({ isOpen = false, onClose }
                                 <>
                                     <div className="flex items-center gap-3">
                                         <Icon className={`w-[18px] h-[18px] shrink-0 ${isActive 
-                                            ? 'text-[#F2AC4A]' 
-                                            : 'text-slate-400 group-hover:text-[#F2AC4A]'} transition-colors`} />
+                                            ? 'text-[#7C3AED]' 
+                                            : 'text-slate-400 group-hover:text-[#7C3AED]'} transition-colors`} />
                                         <span className="text-[13px]">{t(item.name)}</span>
                                     </div>
                                     {'badge' in item && item.badge && !isActive && (
-                                        <span className="text-[10px] font-bold bg-[#F8DDBC] text-[#F2AC4A] px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                        <span className="text-[10px] font-bold bg-[#E9D5FF] text-[#7C3AED] px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                                             {item.badge}
                                         </span>
                                     )}
@@ -163,14 +164,14 @@ const SidebarEngine: React.FC<SidebarEngineProps> = ({ isOpen = false, onClose }
                         onClick={onClose}
                         className={({ isActive }) =>
                             `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${isActive
-                                ? 'bg-[#FAF1E5] text-[#F2AC4A] font-bold shadow-xs'
-                                : 'text-[#5F6368] hover:bg-[#FDF9F6] font-medium'
+                                ? 'bg-[#F3E8FF] text-[#7C3AED] font-bold shadow-xs'
+                                : 'text-[#5F6368] hover:bg-[#FAF5FF] font-medium'
                             }`
                         }
                     >
                         {({ isActive }) => (
                             <>
-                                <LifeBuoy className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-[#F2AC4A]' : 'text-slate-400 group-hover:text-[#F2AC4A]'} transition-colors`} />
+                                <LifeBuoy className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-[#7C3AED]' : 'text-slate-400 group-hover:text-[#7C3AED]'} transition-colors`} />
                                 <span className="text-[13px]">{t('Help & Support')}</span>
                             </>
                         )}

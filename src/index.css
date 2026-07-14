@@ -1,50 +1,50 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro", "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: "SF Pro Display", -apple-system, BlinkMacSystemFont, "SF Pro", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   
-  --color-primary: #F2AC4A;
-  --color-primary-hover: #E09A38;
-  --color-primary-light: rgba(242, 172, 74, 0.08);
-  --color-secondary: #FF7F4D;
-  --color-secondary-hover: #E06F41;
+  --color-primary: #7C3AED;
+  --color-primary-hover: #6D28D9;
+  --color-primary-light: rgba(124, 58, 237, 0.08);
+  --color-secondary: #5C2494;
+  --color-secondary-hover: #4D1B80;
   --color-success: #54BC88;
   --color-success-light: rgba(84, 188, 136, 0.1);
   --color-error: #E86A6A;
   --color-error-light: rgba(232, 106, 106, 0.1);
-  --color-warning: #F2C78D;
-  --color-warning-light: rgba(242, 199, 141, 0.1);
+  --color-warning: #D97706;
+  --color-warning-light: rgba(217, 119, 6, 0.1);
   
-  /* Global teal palette override to orange/yellow */
-  --color-teal-50: #FFF5F2;
-  --color-teal-100: #F8DDBC;
-  --color-teal-200: #F5D2A8;
-  --color-teal-300: #F2C78D;
-  --color-teal-400: #F0BD7C;
-  --color-teal-500: #F2AC4A;
-  --color-teal-650: #F2AC4A;
-  --color-teal-600: #F2AC4A;
-  --color-teal-700: #E09A38;
-  --color-teal-750: #D28A26;
-  --color-teal-800: #D28A26;
-  --color-teal-900: #B26A06;
-  --color-teal-950: #7E4802;
+  /* Global teal palette override to Lavender & Amethyst */
+  --color-teal-50: #FAF5FF;
+  --color-teal-100: #F3E8FF;
+  --color-teal-200: #E9D5FF;
+  --color-teal-300: #D8B4FE;
+  --color-teal-400: #C084FC;
+  --color-teal-500: #7C3AED;
+  --color-teal-650: #7C3AED;
+  --color-teal-600: #7C3AED;
+  --color-teal-700: #6D28D9;
+  --color-teal-750: #5C2494;
+  --color-teal-800: #5C2494;
+  --color-teal-900: #4D1B80;
+  --color-teal-950: #3B0764;
 
   --backdrop-blur-xs: 8px;
 }
 
 :root {
-  --bg-gradient: radial-gradient(circle at 0% 0%, rgba(242, 172, 74, 0.05) 0%, transparent 40%),
-                 radial-gradient(circle at 100% 100%, rgba(242, 172, 74, 0.08) 0%, transparent 40%);
+  --bg-gradient: radial-gradient(circle at 0% 0%, rgba(124, 58, 237, 0.05) 0%, transparent 40%),
+                 radial-gradient(circle at 100% 100%, rgba(92, 36, 148, 0.06) 0%, transparent 40%);
   
   --bg-card: rgba(255, 255, 255, 0.85);
   --border-color: rgba(226, 232, 240, 0.8);
-  --border-glow: rgba(242, 172, 74, 0.15);
+  --border-glow: rgba(124, 58, 237, 0.15);
   
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 10px 25px -5px rgba(242, 172, 74, 0.05), 0 8px 16px -6px rgba(242, 172, 74, 0.03);
+  --shadow-md: 0 10px 25px -5px rgba(124, 58, 237, 0.05), 0 8px 16px -6px rgba(124, 58, 237, 0.03);
   --shadow-lg: 0 20px 40px -10px rgba(15, 23, 42, 0.07);
-  --shadow-glow: 0 0 20px rgba(242, 172, 74, 0.1);
+  --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.1);
 }
 
 body {
@@ -212,6 +212,54 @@ body {
 
 .modal-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.6);
+}
+
+/* Premium UI/UX Pro Max Utility Styles */
+.hover-grow {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.hover-grow:hover {
+  transform: translateY(-3px) scale(1.015);
+}
+
+.card-glow-primary:hover {
+  box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.1), 0 0 15px rgba(124, 58, 237, 0.15);
+  border-color: rgba(124, 58, 237, 0.4);
+}
+
+.card-glow-secondary:hover {
+  box-shadow: 0 10px 25px -5px rgba(92, 36, 148, 0.1), 0 0 15px rgba(92, 36, 148, 0.15);
+  border-color: rgba(92, 36, 148, 0.4);
+}
+
+.card-glow-success:hover {
+  box-shadow: 0 10px 25px -5px rgba(84, 188, 136, 0.1), 0 0 15px rgba(84, 188, 136, 0.15);
+  border-color: rgba(84, 188, 136, 0.4);
+}
+
+.card-glow-amber:hover {
+  box-shadow: 0 10px 25px -5px rgba(217, 119, 6, 0.1), 0 0 15px rgba(217, 119, 6, 0.15);
+  border-color: rgba(217, 119, 6, 0.4);
+}
+
+.glass-premium {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.04);
+}
+
+.gradient-text-orange {
+  background: linear-gradient(135deg, #5C2494 0%, #7C3AED 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-glow {
+  text-shadow: 0 0 12px rgba(124, 58, 237, 0.15);
 }
 
 /* Printing styles for prescription pad */

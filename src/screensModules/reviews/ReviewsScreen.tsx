@@ -288,8 +288,8 @@ export default function ReviewsScreen() {
 
         {/* 3 Star & Below */}
         <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-4">
-          <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center shrink-0">
-            <Star className="w-6 h-6 text-orange-500 fill-orange-500" />
+          <div className="w-12 h-12 bg-[#FAF5FF] rounded-full flex items-center justify-center shrink-0">
+            <Star className="w-6 h-6 text-[#D97706] fill-[#D97706]" />
           </div>
           <div>
             <p className="text-xs font-bold text-slate-500 mb-0.5">3 Star & Below</p>
@@ -388,7 +388,7 @@ export default function ReviewsScreen() {
                   {/* Right: Actions */}
                   <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-4 shrink-0 sm:w-32 border-t sm:border-t-0 pt-4 sm:pt-0">
                     <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full border ${
-                      review.status === 'Responded' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-orange-50 text-orange-600 border-orange-200'
+                      review.status === 'Responded' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-[#FAF5FF] text-[#D97706] border-amber-200'
                     }`}>
                       {review.status}
                     </span>

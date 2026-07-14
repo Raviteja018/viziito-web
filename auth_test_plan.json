@@ -1,0 +1,43 @@
+{
+  "projectId": "fd94fb91-024a-4b30-ae20-2eb2898b091e",
+  "type": "frontend",
+  "name": "Provider Email Password Auth Test",
+  "planSteps": [
+    {
+      "type": "action",
+      "description": "Navigate to the auth login page at https://viziito-auth-test.loca.lt/auth/login"
+    },
+    {
+      "type": "action",
+      "description": "Fill '136.185.66.40' into the localtunnel password field if visible"
+    },
+    {
+      "type": "action",
+      "description": "Click 'Click to Submit' or 'Continue' button to bypass localtunnel password page"
+    },
+    {
+      "type": "action",
+      "description": "Click 'Reload' button if necessary to load the React app after localtunnel bypass"
+    },
+    {
+      "type": "action",
+      "description": "Click 'Email + Password' tab or button on the login screen"
+    },
+    {
+      "type": "action",
+      "description": "Fill 'john.doe@hospital.com' into the Email Address input field"
+    },
+    {
+      "type": "action",
+      "description": "Fill 'password123' into the Password input field"
+    },
+    {
+      "type": "action",
+      "description": "Click 'Login' button"
+    },
+    {
+      "type": "assertion",
+      "description": "Verify that the dashboard screen is loaded and the URL changes to '/dashboard' or indicates dashboard access"
+    }
+  ]
+}

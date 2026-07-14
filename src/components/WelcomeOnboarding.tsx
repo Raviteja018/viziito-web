@@ -44,7 +44,7 @@ export default function WelcomeOnboarding({ onGetStarted }: WelcomeOnboardingPro
       tagline: "DOORSTEP PHARMACY DELIVERY",
       description: "Upload your medical prescription and get verified pharmaceutical products delivered straight to your doorstep securely.",
       icon: <Pill className="w-16 h-16 text-rose-600" />,
-      color: "from-rose-500/10 to-orange-500/10",
+      color: "from-rose-500/10 to-purple-500/10",
       borderColor: "border-rose-100",
       badgeColor: "bg-rose-50 text-rose-800 border-rose-100",
       features: [

@@ -68,23 +68,7 @@ export default function RegistrationModule({
     authorizedPersonName: ''
   });
 
-  // Step 5: OTP values
-  const [mobileOtpInput, setMobileOtpInput] = useState('');
-  const [emailOtpInput, setEmailOtpInput] = useState('');
-  const [otpErrors, setOtpErrors] = useState('');
-  const [resendCountdown, setResendCountdown] = useState(30);
-  const [otpSent, setOtpSent] = useState(true);
 
-  // Resend OTP timer countdown effect
-  useEffect(() => {
-    let timer: any;
-    if (step === 5 && resendCountdown > 0) {
-      timer = setInterval(() => {
-        setResendCountdown((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [step, resendCountdown]);
 
   // Categories list definition
   const categories = [
@@ -230,24 +214,7 @@ export default function RegistrationModule({
     }
   };
 
-  // Submit OTP Verification check
-  const handleVerifyOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (mobileOtpInput === '123456' && emailOtpInput === '654321') {
-      setStep(6);
-      setOtpErrors('');
-    } else {
-      setOtpErrors('Invalid OTP codes entered. Try Mobile: 123456, Email: 654321');
-    }
-  };
 
-  const handleResendOtp = () => {
-    setResendCountdown(30);
-    setOtpSent(true);
-    setOtpErrors('');
-    setMobileOtpInput('');
-    setEmailOtpInput('');
-  };
 
   // Build the unified final data structure for dashboard redirection
   const handleFinalSubmit = () => {
@@ -326,8 +293,7 @@ export default function RegistrationModule({
     { id: 1, label: "Personal Info" },
     { id: 2, label: "Provider Type" },
     { id: 3, label: "Professional Info" },
-    { id: 4, label: "Review" },
-    { id: 5, label: "Verification" }
+    { id: 4, label: "Review" }
   ];
 
   return (
@@ -335,7 +301,7 @@ export default function RegistrationModule({
       <div className="flex flex-col items-center py-8 px-6 max-w-3xl mx-auto w-full">
         
         {/* Back Button */}
-        {step < 6 && (
+        {step < 5 && (
           <div className="w-full flex justify-start mb-6">
             <button 
               onClick={() => {
@@ -357,7 +323,7 @@ export default function RegistrationModule({
           <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-secondary"></div>
 
           {/* Stepper Headers */}
-          {step <= 5 && (
+          {step <= 4 && (
             <div className="flex items-center justify-between gap-2 mb-8 overflow-x-auto pb-2 scrollbar-none">
               {stepsList.map((s, idx) => (
                 <React.Fragment key={s.id}>
@@ -1000,9 +966,8 @@ export default function RegistrationModule({
                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
                   <CheckCircle2 className="w-6 h-6 text-teal-600" />
                   Review Registration
-                </h2>
-                <p className="text-slate-500 text-sm mt-1 font-medium">
-                  Review all details before submitting for OTP verification.
+                </h2>                <p className="text-slate-500 text-sm mt-1 font-medium">
+                  Review all details before submitting your registration.
                 </p>
               </div>
 
@@ -1062,7 +1027,7 @@ export default function RegistrationModule({
                 <div className="p-5 bg-slate-50 border border-slate-100 rounded-2xl relative">
                   <button 
                     onClick={() => setStep(3)}
-                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-teal-600 rounded-lg hover:bg-white border border-transparent hover:border-slate-150 transition-all"
+                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-teal-650 rounded-lg hover:bg-white border border-transparent hover:border-slate-150 transition-all"
                     title="Edit Professional Information"
                   >
                     <Edit2 className="w-4 h-4" />
@@ -1199,109 +1164,9 @@ export default function RegistrationModule({
             </div>
           )}
 
-          {/* Step 5: OTP Verification Screen */}
+          {/* Step 5: Registration Success Screen */}
           {step === 5 && (
-            <div>
-              <div className="mb-6">
-                <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
-                  <Smartphone className="w-6 h-6 text-teal-600" />
-                  OTP Verification
-                </h2>
-                <p className="text-slate-500 text-sm mt-1 font-medium">
-                  We have simulated sending verification codes to your mobile **+91 {personalValues.mobileNumber}** and email **{personalValues.emailAddress}**.
-                </p>
-              </div>
-
-              {/* Demo Helper Banner */}
-              <div className="mb-6 p-4 rounded-xl bg-teal-50 border border-teal-100 text-teal-800 text-xs font-bold leading-relaxed flex items-start gap-2">
-                <ShieldAlert className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
-                <div>
-                  <span className="block font-black text-[13px] text-teal-950 mb-0.5">Simulated Verification Codes:</span>
-                  <span className="block">Mobile OTP: <strong className="text-teal-900 bg-white border border-teal-200 px-1.5 py-0.5 rounded text-[13px]">123456</strong></span>
-                  <span className="block mt-1">Email OTP: <strong className="text-teal-900 bg-white border border-teal-200 px-1.5 py-0.5 rounded text-[13px]">654321</strong></span>
-                </div>
-              </div>
-
-              <form onSubmit={handleVerifyOtp} className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="form-group mb-0">
-                    <label className="form-label flex items-center gap-2">
-                      <Smartphone className="w-4 h-4 text-slate-500" />
-                      Mobile OTP *
-                    </label>
-                    <input 
-                      type="text" 
-                      maxLength={6}
-                      className="form-control tracking-widest text-center text-lg font-black"
-                      placeholder="XXXXXX"
-                      value={mobileOtpInput}
-                      onChange={(e) => setMobileOtpInput(e.target.value.replace(/\D/g, ''))}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group mb-0">
-                    <label className="form-label flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-slate-500" />
-                      Email OTP *
-                    </label>
-                    <input 
-                      type="text" 
-                      maxLength={6}
-                      className="form-control tracking-widest text-center text-lg font-black"
-                      placeholder="XXXXXX"
-                      value={emailOtpInput}
-                      onChange={(e) => setEmailOtpInput(e.target.value.replace(/\D/g, ''))}
-                      required
-                    />
-                  </div>
-                </div>
-
-                {otpErrors && (
-                  <p className="text-rose-500 text-xs font-bold text-center mt-2 animate-bounce">{otpErrors}</p>
-                )}
-
-                {otpSent && (
-                  <div className="text-center text-xs font-bold text-slate-400 mt-2">
-                    {resendCountdown > 0 ? (
-                      <span>Resend OTP available in {resendCountdown}s</span>
-                    ) : (
-                      <button 
-                        type="button"
-                        onClick={handleResendOtp}
-                        className="text-teal-600 hover:text-teal-700 hover:underline cursor-pointer"
-                      >
-                        Resend OTP Codes
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setStep(4)}
-                    className="btn bg-slate-100 hover:bg-slate-200 text-slate-700 w-1/3 py-3.5 font-bold"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary flex-1 py-3.5"
-                  >
-                    Verify & Create Account
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Step 6: Registration Success Screen */}
-          {step === 6 && (
             <div className="text-center animate-fade">
-              {/* Decorative Top Accent */}
-              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-500 to-secondary"></div>
-
               <div className="flex justify-center mb-6">
                 <div className="relative">
                   <div className="absolute inset-0 rounded-full bg-teal-500/10 animate-ping"></div>

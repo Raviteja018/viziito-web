@@ -10,7 +10,7 @@ const PlaceholderWidget = ({ title, componentKey, config }: { title: string, com
     <LayoutDashboard className="w-8 h-8 text-slate-400 mb-3" />
     <h3 className="font-bold text-slate-700 text-sm">{title}</h3>
     <p className="text-xs text-slate-400 mt-1">Component: {componentKey}</p>
-    <p className="text-[10px] text-orange-500 mt-2 font-medium">Pending Implementation</p>
+    <p className="text-[10px] text-[#D97706] mt-2 font-medium">Pending Implementation</p>
   </div>
 );
 
