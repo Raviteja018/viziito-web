@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import type { UserRole } from './UserTypeSelection';
-import { 
-  ArrowLeft, 
-  User, 
-  Briefcase, 
-  CheckCircle2, 
-  ShieldAlert, 
-  Stethoscope, 
-  Building, 
-  Building2, 
-  Pill, 
-  Microscope, 
-  Home, 
+import {
+  ArrowLeft,
+  User,
+  Briefcase,
+  CheckCircle2,
+  ShieldAlert,
+  Stethoscope,
+  Building,
+  Building2,
+  Pill,
+  Microscope,
+  Home,
   Truck,
   Mail,
   Smartphone,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
+import { registerProviderApi, PROVIDER_TYPE_MAP } from '../services/authHelper';
 
 interface RegistrationModuleProps {
   role?: UserRole;
@@ -27,14 +28,16 @@ interface RegistrationModuleProps {
   onRegisterSuccess: (userData: any) => void;
 }
 
-export default function RegistrationModule({ 
-  role, 
-  onBackToRoles, 
-  onBackToLogin, 
-  onRegisterSuccess 
+export default function RegistrationModule({
+  role,
+  onBackToRoles,
+  onBackToLogin,
+  onRegisterSuccess
 }: RegistrationModuleProps) {
   const [step, setStep] = useState(1);
-  const handleBackNavigation = onBackToLogin || onBackToRoles || (() => {});
+  const handleBackNavigation = onBackToLogin || onBackToRoles || (() => { });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Step 1: Personal Info
   const [personalValues, setPersonalValues] = useState({
@@ -42,7 +45,8 @@ export default function RegistrationModule({
     mobileNumber: '',
     emailAddress: '',
     dob: '',
-    gender: ''
+    gender: '',
+    password: ''
   });
 
   // Step 2: Provider Category Selection
@@ -163,6 +167,9 @@ export default function RegistrationModule({
     gender: Yup.string()
       .oneOf(['Male', 'Female', 'Other'], 'Please select a gender')
       .required('Gender is required'),
+    password: Yup.string()
+      .min(6, 'Password must be at least 6 characters')
+      .required('password is required'),
   });
 
   const getStep3Schema = () => {
@@ -299,11 +306,11 @@ export default function RegistrationModule({
   return (
     <div className="flex-1 min-h-0 overflow-y-auto animate-fade">
       <div className="flex flex-col items-center py-8 px-6 max-w-3xl mx-auto w-full">
-        
+
         {/* Back Button */}
         {step < 5 && (
           <div className="w-full flex justify-start mb-6">
-            <button 
+            <button
               onClick={() => {
                 if (step === 1) {
                   handleBackNavigation();
@@ -328,13 +335,12 @@ export default function RegistrationModule({
               {stepsList.map((s, idx) => (
                 <React.Fragment key={s.id}>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
-                      step === s.id 
-                        ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20' 
-                        : step > s.id 
-                          ? 'bg-teal-100 text-teal-700' 
+                    <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${step === s.id
+                        ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20'
+                        : step > s.id
+                          ? 'bg-teal-100 text-teal-700'
                           : 'bg-slate-100 text-slate-400'
-                    }`}>
+                      }`}>
                       {s.id}
                     </span>
                     <span className={`text-xs font-extrabold ${step === s.id ? 'text-slate-800' : 'text-slate-400'}`}>
@@ -374,8 +380,8 @@ export default function RegistrationModule({
                   <Form className="space-y-5">
                     <div className="form-group">
                       <label className="form-label">Full Name *</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         name="fullName"
                         className={`form-control ${touched.fullName && errors.fullName ? 'border-rose-450' : ''}`}
                         placeholder="Dr. John Doe / Authorized Representative Name"
@@ -391,14 +397,13 @@ export default function RegistrationModule({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="form-group mb-0">
                         <label className="form-label">Mobile Number *</label>
-                        <div className={`flex items-center border rounded-xl overflow-hidden focus-within:border-teal-500 focus-within:ring-4 focus-within:ring-teal-500/10 transition-all ${
-                          touched.mobileNumber && errors.mobileNumber ? 'border-rose-450' : 'border-slate-200'
-                        }`}>
+                        <div className={`flex items-center border rounded-xl overflow-hidden focus-within:border-teal-500 focus-within:ring-4 focus-within:ring-teal-500/10 transition-all ${touched.mobileNumber && errors.mobileNumber ? 'border-rose-450' : 'border-slate-200'
+                          }`}>
                           <span className="px-3.5 py-3 bg-slate-50 border-r border-slate-200 text-slate-500 font-bold text-sm whitespace-nowrap">
                             +91
                           </span>
-                          <input 
-                            type="tel" 
+                          <input
+                            type="tel"
                             name="mobileNumber"
                             maxLength={10}
                             className="flex-1 px-4 py-3 text-sm font-semibold text-slate-800 bg-white outline-none placeholder:text-slate-400"
@@ -418,8 +423,8 @@ export default function RegistrationModule({
 
                       <div className="form-group mb-0">
                         <label className="form-label">Email Address *</label>
-                        <input 
-                          type="email" 
+                        <input
+                          type="email"
                           name="emailAddress"
                           className={`form-control ${touched.emailAddress && errors.emailAddress ? 'border-rose-450' : ''}`}
                           placeholder="name@healthcare.com"
@@ -431,13 +436,29 @@ export default function RegistrationModule({
                           <p className="text-rose-500 text-xs mt-1 font-bold">{errors.emailAddress}</p>
                         )}
                       </div>
+                      <div className="form-group">
+                        <label className="form-label">Password *</label>
+                        <input
+                          type="password"
+                          name="password"
+                          className={`form-control ${touched.password && errors.password ? 'border-rose-450' : ''}`}
+                          placeholder="••••••••"
+                          value={values.password}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                        />
+                        {touched.password && errors.password && (
+                          <p className="text-rose-500 text-xs mt-1 font-bold">{errors.password}</p>
+                        )}
+                      </div>
+
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="form-group mb-0">
                         <label className="form-label">Date of Birth *</label>
-                        <input 
-                          type="date" 
+                        <input
+                          type="date"
                           name="dob"
                           className={`form-control ${touched.dob && errors.dob ? 'border-rose-450' : ''}`}
                           value={values.dob}
@@ -451,7 +472,7 @@ export default function RegistrationModule({
 
                       <div className="form-group mb-0">
                         <label className="form-label">Gender *</label>
-                        <select 
+                        <select
                           name="gender"
                           className={`form-control ${touched.gender && errors.gender ? 'border-rose-450' : ''}`}
                           value={values.gender}
@@ -469,8 +490,8 @@ export default function RegistrationModule({
                       </div>
                     </div>
 
-                    <button 
-                      type="submit" 
+                    <button
+                      type="submit"
                       className="btn btn-primary w-full py-3.5 mt-4"
                     >
                       Continue
@@ -503,11 +524,10 @@ export default function RegistrationModule({
                       key={cat.id}
                       type="button"
                       onClick={() => setProviderCategory(cat.id)}
-                      className={`text-left p-5 border rounded-2xl transition-all duration-200 ${cat.bgHover} ${
-                        isSelected 
-                          ? 'border-teal-500 bg-teal-50/40 ring-2 ring-teal-500/10 shadow-md shadow-teal-500/5' 
+                      className={`text-left p-5 border rounded-2xl transition-all duration-200 ${cat.bgHover} ${isSelected
+                          ? 'border-teal-500 bg-teal-50/40 ring-2 ring-teal-500/10 shadow-md shadow-teal-500/5'
                           : 'border-slate-200 bg-white'
-                      }`}
+                        }`}
                     >
                       <div className="flex gap-4">
                         <div className={`p-3 rounded-xl bg-slate-50 border border-slate-100 ${cat.color} shrink-0`}>
@@ -586,8 +606,8 @@ export default function RegistrationModule({
                       <>
                         <div className="form-group mb-0">
                           <label className="form-label">Medical Registration Number *</label>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             name="medicalRegNo"
                             className={`form-control ${touched.medicalRegNo && errors.medicalRegNo ? 'border-rose-450' : ''}`}
                             placeholder="e.g. MCI-12345"
@@ -603,8 +623,8 @@ export default function RegistrationModule({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="form-group mb-0">
                             <label className="form-label">Qualification *</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               name="qualification"
                               className={`form-control ${touched.qualification && errors.qualification ? 'border-rose-450' : ''}`}
                               placeholder="e.g. MBBS, MD (Medicine)"
@@ -619,8 +639,8 @@ export default function RegistrationModule({
 
                           <div className="form-group mb-0">
                             <label className="form-label">Specialization *</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               name="specialization"
                               className={`form-control ${touched.specialization && errors.specialization ? 'border-rose-450' : ''}`}
                               placeholder="e.g. Cardiologist"
@@ -637,8 +657,8 @@ export default function RegistrationModule({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="form-group mb-0">
                             <label className="form-label">Years of Experience *</label>
-                            <input 
-                              type="number" 
+                            <input
+                              type="number"
                               name="experience"
                               min={0}
                               className={`form-control ${touched.experience && errors.experience ? 'border-rose-450' : ''}`}
@@ -654,8 +674,8 @@ export default function RegistrationModule({
 
                           <div className="form-group mb-0">
                             <label className="form-label">Super Specialization (Optional)</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               name="superSpecialization"
                               className="form-control"
                               placeholder="e.g. Interventional Cardiology"
@@ -668,8 +688,8 @@ export default function RegistrationModule({
 
                         <div className="form-group">
                           <label className="form-label">Languages Known (Optional)</label>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             name="languagesKnown"
                             className="form-control"
                             placeholder="e.g. English, Hindi, Telugu"
@@ -686,8 +706,8 @@ export default function RegistrationModule({
                       <>
                         <div className="form-group mb-0">
                           <label className="form-label">Hospital Name *</label>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             name="hospitalName"
                             className={`form-control ${touched.hospitalName && errors.hospitalName ? 'border-rose-450' : ''}`}
                             placeholder="e.g. City Central Hospital"
@@ -703,8 +723,8 @@ export default function RegistrationModule({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="form-group mb-0">
                             <label className="form-label">Hospital Registration Number *</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               name="hospitalRegNo"
                               className={`form-control ${touched.hospitalRegNo && errors.hospitalRegNo ? 'border-rose-450' : ''}`}
                               placeholder="e.g. HOSP-987654"
@@ -719,8 +739,8 @@ export default function RegistrationModule({
 
                           <div className="form-group mb-0">
                             <label className="form-label">Authorized Person Name *</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               name="authorizedPersonName"
                               className={`form-control ${touched.authorizedPersonName && errors.authorizedPersonName ? 'border-rose-450' : ''}`}
                               placeholder="e.g. Jane Smith (Director)"
@@ -741,8 +761,8 @@ export default function RegistrationModule({
                       <>
                         <div className="form-group mb-0">
                           <label className="form-label">Clinic Name *</label>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             name="clinicName"
                             className={`form-control ${touched.clinicName && errors.clinicName ? 'border-rose-450' : ''}`}
                             placeholder="e.g. Apex Health Clinic"
@@ -758,8 +778,8 @@ export default function RegistrationModule({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="form-group mb-0">
                             <label className="form-label">Clinic Registration Number *</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               name="clinicRegNo"
                               className={`form-control ${touched.clinicRegNo && errors.clinicRegNo ? 'border-rose-450' : ''}`}
                               placeholder="e.g. CLN-445566"
@@ -774,8 +794,8 @@ export default function RegistrationModule({
 
                           <div className="form-group mb-0">
                             <label className="form-label">Authorized Person Name *</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               name="authorizedPersonName"
                               className={`form-control ${touched.authorizedPersonName && errors.authorizedPersonName ? 'border-rose-450' : ''}`}
                               placeholder="e.g. Dr. Rayan G. (Lead Physician)"
@@ -796,8 +816,8 @@ export default function RegistrationModule({
                       <>
                         <div className="form-group mb-0">
                           <label className="form-label">Pharmacy Name *</label>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             name="pharmacyName"
                             className={`form-control ${touched.pharmacyName && errors.pharmacyName ? 'border-rose-450' : ''}`}
                             placeholder="e.g. MedPlus Pharmacy"
@@ -813,8 +833,8 @@ export default function RegistrationModule({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="form-group mb-0">
                             <label className="form-label">Drug License Number *</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               name="drugLicenseNo"
                               className={`form-control ${touched.drugLicenseNo && errors.drugLicenseNo ? 'border-rose-450' : ''}`}
                               placeholder="e.g. DL-992288"
@@ -829,8 +849,8 @@ export default function RegistrationModule({
 
                           <div className="form-group mb-0">
                             <label className="form-label">Authorized Person Name *</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               name="authorizedPersonName"
                               className={`form-control ${touched.authorizedPersonName && errors.authorizedPersonName ? 'border-rose-450' : ''}`}
                               placeholder="e.g. Alex Carter (Store Manager)"
@@ -851,8 +871,8 @@ export default function RegistrationModule({
                       <>
                         <div className="form-group mb-0">
                           <label className="form-label">Laboratory Name *</label>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             name="laboratoryName"
                             className={`form-control ${touched.laboratoryName && errors.laboratoryName ? 'border-rose-450' : ''}`}
                             placeholder="e.g. City Diagnostic Laboratory"
@@ -868,8 +888,8 @@ export default function RegistrationModule({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="form-group mb-0">
                             <label className="form-label">Laboratory Registration Number *</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               name="laboratoryRegNo"
                               className={`form-control ${touched.laboratoryRegNo && errors.laboratoryRegNo ? 'border-rose-450' : ''}`}
                               placeholder="e.g. LAB-112233"
@@ -884,8 +904,8 @@ export default function RegistrationModule({
 
                           <div className="form-group mb-0">
                             <label className="form-label">Authorized Person Name *</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               name="authorizedPersonName"
                               className={`form-control ${touched.authorizedPersonName && errors.authorizedPersonName ? 'border-rose-450' : ''}`}
                               placeholder="e.g. Dr. Linda H. (Chief Pathologist)"
@@ -906,8 +926,8 @@ export default function RegistrationModule({
                       <>
                         <div className="form-group mb-0">
                           <label className="form-label">Organization Name *</label>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             name="organizationName"
                             className={`form-control ${touched.organizationName && errors.organizationName ? 'border-rose-450' : ''}`}
                             placeholder="e.g. Portea Home Care / Fast-Response Ambulance / Rent-A-Med"
@@ -922,8 +942,8 @@ export default function RegistrationModule({
 
                         <div className="form-group">
                           <label className="form-label">Authorized Person Name *</label>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             name="authorizedPersonName"
                             className={`form-control ${touched.authorizedPersonName && errors.authorizedPersonName ? 'border-rose-450' : ''}`}
                             placeholder="e.g. Robert Miller (General Administrator)"
@@ -971,10 +991,17 @@ export default function RegistrationModule({
                 </p>
               </div>
 
+              {apiError && (
+                <div className="p-4 mb-6 rounded-2xl bg-rose-50 border border-rose-150 text-rose-800 text-sm font-bold flex items-center gap-2">
+                  <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
+                  <span>{apiError}</span>
+                </div>
+              )}
+
               <div className="space-y-6 mb-6">
                 {/* 1. Personal Info Section */}
                 <div className="p-5 bg-slate-50 border border-slate-100 rounded-2xl relative">
-                  <button 
+                  <button
                     onClick={() => setStep(1)}
                     className="absolute top-4 right-4 p-2 text-slate-400 hover:text-teal-600 rounded-lg hover:bg-white border border-transparent hover:border-slate-150 transition-all"
                     title="Edit Personal Information"
@@ -1007,7 +1034,7 @@ export default function RegistrationModule({
 
                 {/* 2. Provider Category Section */}
                 <div className="p-5 bg-slate-50 border border-slate-100 rounded-2xl relative">
-                  <button 
+                  <button
                     onClick={() => setStep(2)}
                     className="absolute top-4 right-4 p-2 text-slate-400 hover:text-teal-600 rounded-lg hover:bg-white border border-transparent hover:border-slate-150 transition-all"
                     title="Edit Category"
@@ -1025,7 +1052,7 @@ export default function RegistrationModule({
 
                 {/* 3. Professional Info Section */}
                 <div className="p-5 bg-slate-50 border border-slate-100 rounded-2xl relative">
-                  <button 
+                  <button
                     onClick={() => setStep(3)}
                     className="absolute top-4 right-4 p-2 text-slate-400 hover:text-teal-650 rounded-lg hover:bg-white border border-transparent hover:border-slate-150 transition-all"
                     title="Edit Professional Information"
@@ -1153,12 +1180,73 @@ export default function RegistrationModule({
                 >
                   Back
                 </button>
-                <button
+                 <button
                   type="button"
-                  onClick={() => setStep(5)}
-                  className="btn btn-primary flex-1 py-3.5"
+                  disabled={isSubmitting}
+                  onClick={async () => {
+                    setIsSubmitting(true);
+                    setApiError(null);
+
+                    const categoryMap: Record<string, string> = {
+                      doctor: 'doctor',
+                      hospital: 'hospitalAdmin',
+                      clinic: 'clinicOwner',
+                      pharmacy: 'pharmacy',
+                      diagnostic: 'diagnostic',
+                      homecare: 'homecare',
+                      ambulance: 'ambulance',
+                      equipment: 'equipment'
+                    };
+
+                    const providerKey = categoryMap[providerCategory || ''] || 'doctor';
+                    const provider_type_id = PROVIDER_TYPE_MAP[providerKey] || 5;
+
+                    const payload = {
+                      full_name: personalValues.fullName,
+                      phone: personalValues.mobileNumber,
+                      email: personalValues.emailAddress,
+                      date_of_birth: personalValues.dob,
+                      gender: personalValues.gender.toLowerCase(),
+                      provider_type_id,
+                      password: personalValues.password,
+                      medicalRegNo: step3Values.medicalRegNo || undefined,
+                      qualification: step3Values.qualification || undefined,
+                      specialization: step3Values.specialization || undefined,
+                      experience: step3Values.experience ? Number(step3Values.experience) : undefined,
+                      superSpecialization: step3Values.superSpecialization || undefined,
+                      languagesKnown: step3Values.languagesKnown || undefined,
+                      hospitalName: step3Values.hospitalName || undefined,
+                      hospitalRegNo: step3Values.hospitalRegNo || undefined,
+                      authorizedPersonName: step3Values.authorizedPersonName || undefined,
+                      clinicName: step3Values.clinicName || undefined,
+                      clinicRegNo: step3Values.clinicRegNo || undefined,
+                      pharmacyName: step3Values.pharmacyName || undefined,
+                      drugLicenseNo: step3Values.drugLicenseNo || undefined,
+                      laboratoryName: step3Values.laboratoryName || undefined,
+                      laboratoryRegNo: step3Values.laboratoryRegNo || undefined,
+                      organizationName: step3Values.organizationName || undefined,
+                    };
+
+                    try {
+                      await registerProviderApi(payload);
+                      setStep(5);
+                    } catch (error: any) {
+                      const msg = error.response?.data?.message || error.message || 'Registration failed. Please try again.';
+                      setApiError(msg);
+                    } finally {
+                      setIsSubmitting(false);
+                    }
+                  }}
+                  className="btn btn-primary flex-1 py-3.5 flex items-center justify-center gap-2"
                 >
-                  Submit Registration
+                  {isSubmitting ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Registration'
+                  )}
                 </button>
               </div>
             </div>
@@ -1182,7 +1270,7 @@ export default function RegistrationModule({
               <p className="text-teal-600 font-bold text-lg mt-2">
                 Your provider account has been created successfully.
               </p>
-              
+
               <div className="max-w-md mx-auto">
                 <p className="text-slate-500 mt-4 leading-relaxed text-sm font-medium">
                   You can now log in and complete your organization profile, verification documents, KYC, bank details, and other information from your Provider Workspace.
@@ -1193,7 +1281,7 @@ export default function RegistrationModule({
                   <span>Organization setup, KYC, bank details, profile completion, and verification are completed inside the workspace after your first login.</span>
                 </div>
 
-                <button 
+                <button
                   onClick={handleFinalSubmit}
                   className="btn btn-primary w-full py-4 shadow-lg shadow-teal-600/25 mt-2"
                 >

@@ -16,6 +16,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import logoImg from '../assets/vizito_logo.png';
+import { loginApi } from '../services/authHelper';
 
 interface AuthModuleProps {
   onLoginSuccess: (user: any) => void;
@@ -65,6 +66,7 @@ export default function AuthModule({ onLoginSuccess, onRegisterClick }: AuthModu
   // Error & Status Messages
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // OTP Countdown Effect
   useEffect(() => {
@@ -151,34 +153,42 @@ export default function AuthModule({ onLoginSuccess, onRegisterClick }: AuthModu
     });
   };
 
-  const handlePasswordLogin = (e: React.FormEvent) => {
+  const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     if (isLocked) { setErrorMessage('Your account has been temporarily blocked. Please contact support.'); return; }
-    if (loginType === 'mobile' && !validateMobile(mobile)) { setErrorMessage('Invalid Mobile Number'); return; }
-    if (loginType === 'email' && !validateEmail(email)) { setErrorMessage('Invalid Email Address'); return; }
-    if (!validatePassword(password)) { setErrorMessage('Incorrect Password'); return; }
-    if (loginType === 'mobile' && mobile === '8888888888') { setErrorMessage('Your account has been temporarily blocked. Please contact support.'); return; }
-    if (loginType === 'mobile' && mobile === '9999999999') { setErrorMessage('Your account verification is pending.'); return; }
-    if (loginType === 'email' && email === 'blocked@vizito.com') { setErrorMessage('Your account has been temporarily blocked. Please contact support.'); return; }
+    if (loginType === 'mobile') {
+      setErrorMessage('Mobile password login is not supported. Please use Email login.');
+      return;
+    }
+    if (!validateEmail(email)) { setErrorMessage('Invalid Email Address'); return; }
+    if (!validatePassword(password)) { setErrorMessage('Password must be at least 8 characters.'); return; }
 
-    if (password === 'password123') {
-      onLoginSuccess({
-        email: loginType === 'email' ? email : 'john.doe@hospital.com',
-        mobile: loginType === 'mobile' ? mobile : '9876543210',
-        fullName: 'Dr. Johnathan Doe',
-        role: 'doctor',
-      });
-    } else {
+    setIsSubmitting(true);
+    try {
+      const response = await loginApi({ email, password });
+      
+      const userData = {
+        email: response?.email || email,
+        role: response?.role || 'doctor',
+        fullName: response?.fullName || response?.full_name || 'Provider Workspace',
+        token: response?.token || '',
+      };
+
+      onLoginSuccess(userData);
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'Login failed. Please verify your credentials.';
+      setErrorMessage(msg);
+
       const attempts = failedAttempts + 1;
       setFailedAttempts(attempts);
       if (attempts >= 5) {
         setIsLocked(true);
         setLockCountdown(900);
         setErrorMessage('Your account has been temporarily blocked. Please contact support.');
-      } else {
-        setErrorMessage('Incorrect Password');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -440,10 +450,17 @@ export default function AuthModule({ onLoginSuccess, onRegisterClick }: AuthModu
                   {/* Action Submit Button */}
                   <button
                     type="submit"
-                    className="w-full bg-primary hover:bg-primary-hover text-white py-3.5 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center relative shadow-md shadow-primary/10 cursor-pointer mt-6"
+                    disabled={isSubmitting}
+                    className="w-full bg-primary hover:bg-primary-hover text-white py-3.5 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center relative shadow-md shadow-primary/10 cursor-pointer mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span>{authMethod === 'otp' ? 'Send OTP' : 'Login'}</span>
-                    <Send className="w-4 h-4 absolute right-4 text-white/90" />
+                    {isSubmitting ? (
+                      <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    ) : (
+                      <>
+                        <span>{authMethod === 'otp' ? 'Send OTP' : 'Login'}</span>
+                        <Send className="w-4 h-4 absolute right-4 text-white/90" />
+                      </>
+                    )}
                   </button>
                 </form>
 

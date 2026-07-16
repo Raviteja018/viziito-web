@@ -39,6 +39,19 @@ interface Doctor {
 export const HospitalDashboardEngine = () => {
   const navigate = useNavigate();
   
+  const userString = localStorage.getItem('vizito_user');
+  let hospitalName = 'Hospital Admin';
+  if (userString) {
+    try {
+      const user = JSON.parse(userString);
+      if (user?.fullName || user?.full_name) {
+        hospitalName = user.fullName || user.full_name;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  
   // ─── FILTER STATES ──────────────────────────────────────────────────────────
   const [dateFilter, setDateFilter] = useState('Today, 14 May 2025');
   const [locationFilter, setLocationFilter] = useState('All Locations');
@@ -297,7 +310,7 @@ export const HospitalDashboardEngine = () => {
         <div className="space-y-4 z-10 w-full md:w-auto">
           <div>
             <h1 className="text-2xl font-black text-slate-800 flex flex-wrap items-center gap-2">
-              Good Morning, Hospital Admin! 👋
+              Good Morning, {hospitalName}! 👋
             </h1>
             <p className="text-sm font-semibold text-slate-500 mt-1 flex items-center gap-2">
               <span className="relative flex h-2 w-2">

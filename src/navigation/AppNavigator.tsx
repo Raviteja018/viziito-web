@@ -176,9 +176,22 @@ const OnboardingWrapper = () => {
 
 const LoginWrapper = () => {
   const navigate = useNavigate();
+  const { setRole } = useRole();
   return (
     <AuthModule 
-      onLoginSuccess={() => navigate('/dashboard')}
+      onLoginSuccess={(userData) => {
+        localStorage.setItem('vizito_user', JSON.stringify({
+          email: userData.email,
+          role: userData.role,
+          fullName: userData.fullName,
+          token: userData.token
+        }));
+        if (userData.token) {
+          localStorage.setItem('vizito_token', userData.token);
+        }
+        setRole(userData.role);
+        navigate('/dashboard');
+      }}
       onRegisterClick={() => navigate('/auth/register')}
     />
   );
@@ -205,6 +218,12 @@ const RegisterWrapper = () => {
       role={role}
       onBackToLogin={() => navigate('/auth/login')}
       onRegisterSuccess={(userData) => {
+        localStorage.setItem('vizito_user', JSON.stringify({
+          email: userData.email,
+          role: userData.role,
+          fullName: userData.fullName,
+          token: userData.token || ''
+        }));
         setRole(userData.role);
         navigate('/dashboard');
       }}

@@ -18,6 +18,19 @@ import { useNavigate } from 'react-router-dom';
 
 const DoctorDashboardEngine = () => {
   const navigate = useNavigate();
+
+  const userString = localStorage.getItem('vizito_user');
+  let doctorName = 'Dr. Arjun';
+  if (userString) {
+    try {
+      const user = JSON.parse(userString);
+      if (user?.fullName || user?.full_name) {
+        doctorName = user.fullName || user.full_name;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
   const [selectedClinic, setSelectedClinic] = useState<string | null>(null);
   const [greeting, setGreeting] = useState('Good Morning');
   const [autoRefreshedTime, setAutoRefreshedTime] = useState<string>('');
@@ -110,7 +123,7 @@ const DoctorDashboardEngine = () => {
       {/* Dynamic Header + Actions */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-[#2B2B2B] tracking-tight">{greeting}, Dr. Arjun 👋</h1>
+          <h1 className="text-2xl font-black text-[#2B2B2B] tracking-tight">{greeting}, {doctorName} 👋</h1>
           <p className="text-xs font-semibold text-slate-500 mt-1 flex items-center gap-1.5">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>

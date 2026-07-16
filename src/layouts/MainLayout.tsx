@@ -13,6 +13,37 @@ const MainLayout = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
+  const userString = localStorage.getItem('vizito_user');
+  let loggedInUserName = '';
+  if (userString) {
+    try {
+      const user = JSON.parse(userString);
+      loggedInUserName = user?.fullName || user?.full_name || '';
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  const displayName = loggedInUserName || (
+    role === 'doctor' ? 'Dr. Arjun Reddy' :
+    role === 'patient' ? 'Meera' :
+    role === 'clinic' ? 'City Care' :
+    role === 'hospital' ? 'Hospital Admin' :
+    role === 'pharmacy' ? 'MediPlus Pharmacy' :
+    role === 'diagnostic' ? 'Dr Lal Labs' :
+    role === 'homecare' ? 'Portea HomeCare' :
+    'RedCross Dispatch'
+  );
+
+  const getInitials = (name: string) => {
+    if (!name) return 'VI';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + (parts[1][0] || '')).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
+
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden relative" style={{ fontFamily: "var(--font-sans)" }}>
 
@@ -78,20 +109,13 @@ const MainLayout = () => {
                 <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden shrink-0 ring-2 ring-white shadow-sm">
                   <div className="w-full h-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
                     <span className="text-white text-xs font-bold">
-                      {role === 'doctor' ? 'AR' : role === 'hospital' ? 'HA' : 'VI'}
+                      {getInitials(displayName)}
                     </span>
                   </div>
                 </div>
                 <div className="hidden sm:block text-right select-none">
                   <p className="text-sm font-bold text-slate-800 leading-none">
-                    {role === 'doctor' ? 'Dr. Arjun Reddy' :
-                     role === 'patient' ? 'Meera' :
-                     role === 'clinic' ? 'City Care' :
-                     role === 'hospital' ? 'Hospital Admin' :
-                     role === 'pharmacy' ? 'MediPlus Pharmacy' :
-                     role === 'diagnostic' ? 'Dr Lal Labs' :
-                     role === 'homecare' ? 'Portea HomeCare' :
-                     'RedCross Dispatch'}
+                    {displayName}
                   </p>
                   <p className="text-[10px] text-slate-400 leading-none mt-1 capitalize font-medium">
                     {role === 'hospital' ? 'Administrator' : role}
