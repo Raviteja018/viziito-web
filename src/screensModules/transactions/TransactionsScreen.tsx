@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Download,
   Search,
@@ -19,6 +19,10 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useRole } from '../../store/role/RoleContext';
+import { useHospitalRole } from '../../store/hospital/HospitalRoleContext';
+import { MOCK_BRANCHES, MOCK_DEPARTMENTS, MOCK_DOCTORS } from '../../mocks/hospitalMocks';
+import type { Appointment } from '../appointments/mockAppointments';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type PaymentStatus = 'Success' | 'Pending' | 'Failed' | 'Cancelled' | 'Refunded' | 'Partial Refund';
@@ -37,6 +41,8 @@ interface TransactionItem {
   clinic: string;
   dateTime: string; // YYYY-MM-DD HH:MM
   displayDateTime: string; // DD MMM HH:MM AM/PM
+  doctorName?: string;
+  department?: string;
 }
 
 const INITIAL_TRANSACTIONS: TransactionItem[] = [
@@ -165,8 +171,14 @@ const INITIAL_TRANSACTIONS: TransactionItem[] = [
 export default function TransactionsScreen() {
   const navigate = useNavigate();
 
+  const { role } = useRole();
+  const hospitalRoleContext = useHospitalRole();
+  const isHospital = role === 'hospital';
+  const subRole = hospitalRoleContext?.role; // 'admin' | 'receptionist'
+  const assignedBranch = hospitalRoleContext?.assignedBranch || '';
+
   // Transactions database
-  const [transactions] = useState<TransactionItem[]>(INITIAL_TRANSACTIONS);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -177,8 +189,95 @@ export default function TransactionsScreen() {
   const [consultationTypeFilter, setConsultationTypeFilter] = useState<'All' | 'Walk-In' | 'In-Clinic' | 'Video Consultation' | 'Home Visit'>('All');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<'All' | 'Success' | 'Pending' | 'Failed' | 'Cancelled' | 'Refunded' | 'Partial Refund'>('All');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<'All' | 'UPI' | 'Credit Card' | 'Debit Card' | 'Net Banking' | 'Wallet' | 'Cash' | 'QR Code'>('All');
-  const [clinicFilter, setClinicFilter] = useState<'All' | 'Apollo Hospital' | 'Care Clinic Banjara'>('All');
+  
+  const [clinicFilter, setClinicFilter] = useState(() => {
+    if (role === 'hospital') {
+      return hospitalRoleContext?.role === 'receptionist' ? (hospitalRoleContext?.assignedBranch || '') : 'All';
+    }
+    return 'All';
+  });
+
+  // Hospital specific filters
+  const [doctorFilter, setDoctorFilter] = useState('All');
+  const [deptFilter, setDeptFilter] = useState('All');
+
   const [sortOrder, setSortOrder] = useState<'Latest First' | 'Oldest First' | 'Highest Amount' | 'Lowest Amount'>('Latest First');
+
+  useEffect(() => {
+    const cleanDateToISO = (dateStr: string) => {
+      if (!dateStr) return '2026-07-14';
+      const months: Record<string, string> = {
+        Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
+        Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12'
+      };
+      const parts = dateStr.split(' ');
+      if (parts.length === 3) {
+        const day = parts[0].padStart(2, '0');
+        const month = months[parts[1]] ?? '01';
+        const year = parts[2];
+        return `${year}-${month}-${day}`;
+      }
+      return dateStr;
+    };
+
+    const cleanTimeTo24h = (timeStr: string) => {
+      if (!timeStr) return '10:00';
+      let [time, modifier] = timeStr.split(' ');
+      let [hours, minutes] = time.split(':');
+      if (hours === '12') {
+        hours = '00';
+      }
+      if (modifier === 'PM') {
+        hours = String(parseInt(hours, 10) + 12);
+      }
+      return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+    };
+
+    if (isHospital) {
+      const savedAppsStr = localStorage.getItem('vizito_appointments');
+      const appointments: Appointment[] = savedAppsStr ? JSON.parse(savedAppsStr) : [];
+      
+      const mappedTxns: TransactionItem[] = appointments.map((apt: any, index) => {
+        const gross = apt.amount || 800;
+        
+        const apptDateStr = cleanDateToISO(apt.date);
+        const apptTime24 = cleanTimeTo24h(apt.time);
+        const dateTime = `${apptDateStr} ${apptTime24}`;
+        
+        let status: PaymentStatus = 'Pending';
+        if (apt.status === 'Completed') {
+          status = 'Success';
+        } else if (apt.status === 'Cancelled') {
+          status = 'Cancelled';
+        }
+        
+        const paymentMethods: TransactionItem['paymentMethod'][] = ['UPI', 'Credit Card', 'Debit Card', 'Net Banking', 'Cash'];
+        const method = paymentMethods[index % paymentMethods.length];
+
+        return {
+          id: `TXN${apt.id.replace(/\D/g, '') || String(10001 + index)}`,
+          apptId: apt.id,
+          patientName: apt.patient,
+          mobile: apt.phone || '9876543210',
+          consultationType: apt.type,
+          paymentMethod: method,
+          paymentReference: `REF-${200000 + index}`,
+          receiptNumber: `REC-${100000 + index}`,
+          grossAmount: gross,
+          status,
+          clinic: apt.location,
+          dateTime,
+          displayDateTime: `${apt.date} ${apt.time}`,
+          doctorName: apt.doctorName || 'Dr. Arjun Reddy',
+          department: apt.department || 'General Medicine'
+        };
+      });
+      
+      setTransactions(mappedTxns);
+    } else {
+      setTransactions(INITIAL_TRANSACTIONS);
+    }
+  }, [isHospital]);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -244,6 +343,15 @@ export default function TransactionsScreen() {
       // 5. Clinic Filter
       if (clinicFilter !== 'All' && t.clinic !== clinicFilter) return false;
 
+      // Hospital Portal specific receptionist locking & doctor/department filters
+      if (isHospital) {
+        if (subRole === 'receptionist') {
+          if (t.clinic.toLowerCase() !== assignedBranch.toLowerCase()) return false;
+        }
+        if (doctorFilter !== 'All' && t.doctorName !== doctorFilter) return false;
+        if (deptFilter !== 'All' && t.department !== deptFilter) return false;
+      }
+
       // 6. Date period
       const txnDate = new Date(t.dateTime.split(' ')[0]);
       if (dateFilter === 'Today') {
@@ -299,8 +407,17 @@ export default function TransactionsScreen() {
   const countPending = transactions.filter(t => t.status === 'Pending').length;
   const countFailed = transactions.filter(t => t.status === 'Failed').length;
 
+  if (isHospital && subRole === 'receptionist') {
+    return (
+      <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl shadow-sm font-sans">
+        <h2 className="text-lg font-black text-rose-600 mb-2">Access Denied</h2>
+        <p className="text-sm text-slate-500 font-bold">Receptionists are not authorized to view financial transaction logs.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       
       {/* Toast Notifier */}
       {toast && (
@@ -313,8 +430,14 @@ export default function TransactionsScreen() {
       {/* Header Panel */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#2B2B2B] tracking-tight font-sans">Payment Transactions</h1>
-          <p className="text-xs font-semibold text-slate-500 mt-1">Audit complete patient ledger histories, payment methods, and receipts</p>
+          <h1 className="text-2xl font-extrabold text-[#2B2B2B] tracking-tight">
+            {isHospital ? 'Hospital Payment Transactions' : 'Payment Transactions'}
+          </h1>
+          <p className="text-xs font-semibold text-slate-500 mt-1">
+            {isHospital 
+              ? 'Audit complete hospital ledger histories, payment methods, and receipts across all branches'
+              : 'Audit complete patient ledger histories, payment methods, and receipts'}
+          </p>
         </div>
         
         <div className="flex items-center gap-3 shrink-0">
@@ -437,17 +560,59 @@ export default function TransactionsScreen() {
           </div>
 
           <div>
-            <label className="block text-[9px] font-bold text-slate-455 uppercase mb-1">Clinic Selection</label>
+            <label className="block text-[9px] font-bold text-slate-455 uppercase mb-1">
+              {isHospital ? 'Branch Selection' : 'Clinic Selection'}
+            </label>
             <select
               value={clinicFilter}
               onChange={e => { setClinicFilter(e.target.value as any); setCurrentPage(1); }}
               className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold outline-none cursor-pointer"
             >
-              <option value="All">All Clinics</option>
-              <option value="Apollo Hospital">Apollo Hospital</option>
-              <option value="Care Clinic Banjara">Care Clinic Banjara</option>
+              <option value="All">{isHospital ? 'All Branches' : 'All Clinics'}</option>
+              {isHospital ? (
+                MOCK_BRANCHES.filter(b => b.status === 'Active').map(b => (
+                  <option key={b.name} value={b.name}>{b.name}</option>
+                ))
+              ) : (
+                <>
+                  <option value="Apollo Hospital">Apollo Hospital</option>
+                  <option value="Care Clinic Banjara">Care Clinic Banjara</option>
+                </>
+              )}
             </select>
           </div>
+
+          {isHospital && (
+            <>
+              <div>
+                <label className="block text-[9px] font-bold text-slate-455 uppercase mb-1">Doctor Selection</label>
+                <select
+                  value={doctorFilter}
+                  onChange={e => { setDoctorFilter(e.target.value); setCurrentPage(1); }}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold outline-none cursor-pointer"
+                >
+                  <option value="All">All Doctors</option>
+                  {MOCK_DOCTORS.map(d => (
+                    <option key={d.name} value={d.name}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold text-slate-455 uppercase mb-1">Department Selection</label>
+                <select
+                  value={deptFilter}
+                  onChange={e => { setDeptFilter(e.target.value); setCurrentPage(1); }}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold outline-none cursor-pointer"
+                >
+                  <option value="All">All Departments</option>
+                  {MOCK_DEPARTMENTS.filter(dep => dep.status === 'Active').map(dep => (
+                    <option key={dep.name} value={dep.name}>{dep.name}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
 
           <div>
             <label className="block text-[9px] font-bold text-slate-455 uppercase mb-1">Date Period</label>
@@ -519,11 +684,20 @@ export default function TransactionsScreen() {
               ) : (
                 paginatedTransactions.map(txn => (
                   <tr key={txn.id} className="hover:bg-slate-50/50">
-                    <td className="p-3 text-slate-500">{txn.displayDateTime}</td>
+                    <td className="p-3 text-slate-500">
+                      <div>{txn.displayDateTime}</div>
+                      {isHospital && <div className="text-[9px] text-slate-400 font-bold mt-0.5">{txn.clinic}</div>}
+                    </td>
                     <td className="p-3 font-mono font-bold text-slate-800">{txn.id}</td>
                     <td className="p-3 font-mono text-slate-650">{txn.apptId}</td>
-                    <td className="p-3 font-black text-slate-800">{txn.patientName}</td>
-                    <td className="p-3 text-slate-550">{txn.consultationType}</td>
+                    <td className="p-3">
+                      <div className="font-black text-slate-800">{txn.patientName}</div>
+                      {isHospital && <div className="text-[9px] text-slate-400 font-bold mt-0.5">{txn.doctorName || 'Dr. Arjun Reddy'}</div>}
+                    </td>
+                    <td className="p-3 text-slate-550">
+                      <div>{txn.consultationType}</div>
+                      {isHospital && <div className="text-[9px] text-purple-600 font-bold mt-0.5">{txn.department || 'General Medicine'}</div>}
+                    </td>
                     <td className="p-3 text-slate-600">{txn.paymentMethod}</td>
                     <td className="p-3 text-right text-slate-900 font-black">₹{txn.grossAmount}</td>
                     <td className="p-3">

@@ -30,36 +30,75 @@ import {
     Bell,
     ShieldCheck,
     MessageCircle,
-    CalendarCheck
+    CalendarCheck,
+    ChevronDown
 } from 'lucide-react';
 import { useRole } from '../../store/role/RoleContext';
 import { useLanguage } from '../../store/language/LanguageContext';
+import { useHospitalRole } from '../../store/hospital/HospitalRoleContext';
+import { type StaffPermissions } from '../../mocks/hospitalMocks';
 import logoImg from '../../assets/vizito_logo.png';
 
+const hospitalPermissionMap: Record<string, keyof StaffPermissions> = {
+    'Dashboard': 'dashboard',
+    'Hospital Profile': 'hospitalProfile',
+    'Branch Management': 'branchManagement',
+    'Doctor Management': 'doctorManagement',
+    'Department Management': 'departmentManagement',
+    'Staff Management (Receptionist Management)': 'staffManagement',
+    'Availability Management': 'availabilityManagement',
+    'Appointment Management': 'appointmentManagement',
+    'Patient Management': 'patientManagement',
+    'Financial Management': 'revenue',
+    'Integrations': 'integrations',
+    'Settings': 'settings',
+};
+
 const allNavItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['doctor', 'clinic', 'patient', 'hospital', 'pharmacy', 'diagnostic', 'homecare', 'ambulance'] },
-    // Doctor & Clinic Nav
-    { name: 'Appointment Management', path: '/appointments', icon: Calendar, roles: ['doctor', 'clinic'] },
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['doctor', 'clinic', 'hospital', 'pharmacy', 'diagnostic', 'homecare', 'ambulance'] },
+    
+    // Hospital Admin Sidebar (ordered as requested)
+    { name: 'Hospital Profile', path: '/profile', icon: Users, roles: ['hospital'] },
+    { name: 'Branch Management', path: '/branches', icon: Building2, roles: ['hospital'] },
+    { name: 'Doctor Management', path: '/doctors', icon: UsersRound, roles: ['hospital'] },
+    { name: 'Department Management', path: '/hospital-departments', icon: ClipboardList, roles: ['hospital'] },
+    { name: 'Staff Management (Receptionist Management)', path: '/staff', icon: Contact, roles: ['hospital'] },
+    { name: 'Availability Management', path: '/availability', icon: Clock, roles: ['hospital', 'doctor'] },
+    { name: 'Appointment Management', path: '/appointments', icon: Calendar, roles: ['hospital', 'doctor', 'clinic'] },
+    { name: 'Patient Management', path: '/patients', icon: Users, roles: ['hospital', 'doctor', 'clinic'] },
+
+    // Clinic Sidebar
+    { name: 'Clinic Profile', path: '/profile', icon: Building2, roles: ['clinic'] },
+    { name: 'Partner Doctors', path: '/clinic-doctors', icon: UsersRound, roles: ['clinic'] },
+    { name: 'Clinic Availability', path: '/availability', icon: Clock, roles: ['clinic'] },
+    { 
+        name: 'Integrations', 
+        path: '/integrations', 
+        icon: ShieldCheck, 
+        roles: ['hospital', 'clinic'],
+        subItems: [
+            { name: 'Pharmacy', path: '/integrations/pharmacy' },
+            { name: 'Laboratory', path: '/integrations/laboratory' },
+            { name: 'Ambulance', path: '/integrations/ambulance' }
+        ]
+    },
+    { 
+        name: 'Financial Management', 
+        path: '/revenue', 
+        icon: Wallet, 
+        roles: ['hospital', 'doctor', 'clinic', 'pharmacy', 'diagnostic', 'homecare', 'ambulance'],
+        subItems: [
+            { name: 'Revenue & Settlement', path: '/revenue' },
+            { name: 'Transactions', path: '/transactions' }
+        ]
+    },
+    { name: 'Settings', path: '/settings', icon: Settings, roles: ['hospital', 'doctor', 'clinic', 'pharmacy', 'diagnostic', 'homecare', 'ambulance'] },
+
+    // Doctor & Clinic specific (not in hospital list)
     { name: 'Prescription Management', path: '/prescriptions', icon: FileText, roles: ['doctor'] },
-    { name: 'Patient Management', path: '/patients', icon: Users, roles: ['doctor', 'clinic', 'hospital'] },
-    { name: 'Revenue & Settlement', path: '/revenue', icon: Wallet, roles: ['doctor', 'clinic', 'hospital', 'pharmacy', 'diagnostic', 'homecare', 'ambulance'] },
-    { name: 'Transactions', path: '/transactions', icon: ClipboardList, roles: ['doctor', 'clinic'] },
-    { name: 'Availability Management', path: '/availability', icon: Clock, roles: ['doctor'] },
-    { name: 'Reviews & Ratings', path: '/reviews', icon: Star, roles: ['doctor', 'clinic', 'hospital', 'pharmacy', 'diagnostic', 'homecare', 'ambulance'] },
-    { name: 'Notifications', path: '/notifications', icon: Bell, roles: ['doctor', 'clinic', 'hospital', 'pharmacy', 'diagnostic', 'homecare', 'ambulance'], badge: 8 },
+    { name: 'Reviews & Ratings', path: '/reviews', icon: Star, roles: ['doctor', 'clinic', 'pharmacy', 'diagnostic', 'homecare', 'ambulance'] },
+    { name: 'Notifications', path: '/notifications', icon: Bell, roles: ['doctor', 'clinic', 'pharmacy', 'diagnostic', 'homecare', 'ambulance'], badge: 8 },
 
-
-    // Patient Nav
-    { name: 'Find Doctors & Clinics', path: '/find-doctors', icon: Search, roles: ['patient'] },
-    { name: 'My Consultations', path: '/my-consultations', icon: Calendar, roles: ['patient'] },
-    { name: 'Records & Reports', path: '/my-records', icon: HeartPulse, roles: ['patient'] },
-    { name: 'Pharmacy Orders', path: '/pharmacy-orders', icon: Pill, roles: ['patient'] },
-    { name: 'Family Profiles', path: '/family-profiles', icon: Users, roles: ['patient'] },
-
-    // Hospital Nav
-    { name: 'Bed Availability', path: '/hospital-beds', icon: BedDouble, roles: ['hospital'] },
-    { name: 'Emergency & Ambulance', path: '/hospital-emergency', icon: Ambulance, roles: ['hospital'] },
-    { name: 'Departments & Staff', path: '/hospital-departments', icon: Building2, roles: ['hospital'] },
 
     // Pharmacy Nav
     { name: 'Inventory & Stock', path: '/pharmacy-inventory', icon: Package, roles: ['pharmacy'] },
@@ -90,8 +129,46 @@ const SidebarEngine: React.FC<SidebarEngineProps> = ({ isOpen = false, onClose }
     const { role } = useRole();
     const { t } = useLanguage();
     const location = useLocation();
-    const visibleNavItems = allNavItems.filter(item => item.roles.includes(role));
+
+    // Dynamically retrieve hospital context & permissions
+    const hospitalContext = useHospitalRole();
+    const hospitalPermissions = hospitalContext?.permissions;
+
+    const visibleNavItems = allNavItems
+        .filter(item => {
+            const hasRole = item.roles.includes(role);
+            if (!hasRole) return false;
+
+            // If hospital role, check specific permissions
+            if (role === 'hospital' && hospitalPermissions) {
+                const permKey = hospitalPermissionMap[item.name];
+                if (permKey) {
+                    const hasViewPermission = hospitalPermissions[permKey]?.view;
+                    return !!hasViewPermission;
+                }
+            }
+            return true;
+        })
+        .map(item => {
+            // Filter subItems if they exist (e.g. Integrations)
+            if (role === 'hospital' && item.name === 'Integrations' && 'subItems' in item && item.subItems && hospitalPermissions) {
+                const filteredSubItems = item.subItems.filter(sub => {
+                    if (sub.name === 'Pharmacy') return !!hospitalPermissions.integrations.pharmacy;
+                    if (sub.name === 'Laboratory') return !!hospitalPermissions.integrations.laboratory;
+                    if (sub.name === 'Ambulance') return !!hospitalPermissions.integrations.ambulance;
+                    return true;
+                });
+                return { ...item, subItems: filteredSubItems };
+            }
+            return item;
+        });
+
     const [isFooterVisible, setIsFooterVisible] = useState(true);
+    const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({ Integrations: true });
+
+    const toggleExpanded = (name: string) => {
+        setExpandedItems(prev => ({ ...prev, [name]: !prev[name] }));
+    };
 
     const isReviewsPage = location.pathname.includes('/reviews');
     const isNotificationsPage = location.pathname.includes('/notifications');
@@ -116,7 +193,7 @@ const SidebarEngine: React.FC<SidebarEngineProps> = ({ isOpen = false, onClose }
                 {/* Close Button on Mobile */}
                 <button
                     onClick={onClose}
-                    className="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                    className="lg:hidden p-1.5 text-slate-400 hover:text-slate-650 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                     <X className="w-4 h-4" />
                 </button>
@@ -126,6 +203,42 @@ const SidebarEngine: React.FC<SidebarEngineProps> = ({ isOpen = false, onClose }
             <div className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5" style={{ scrollbarWidth: 'none' }}>
                 {visibleNavItems.map((item) => {
                     const Icon = item.icon;
+                    if ('subItems' in item && item.subItems) {
+                        const isExpanded = !!expandedItems[item.name];
+                        return (
+                            <div key={item.name} className="space-y-0.5">
+                                <button
+                                    onClick={() => toggleExpanded(item.name)}
+                                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-150 group text-[#5F6368] hover:bg-[#FAF5FF] hover:text-[#7C3AED] font-bold text-left cursor-pointer"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Icon className="w-[18px] h-[18px] shrink-0 text-slate-400 group-hover:text-[#7C3AED] transition-colors" />
+                                        <span className="text-[13px]">{t(item.name)}</span>
+                                    </div>
+                                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-[#7C3AED] transition-transform duration-150 ${isExpanded ? 'transform rotate-180' : ''}`} />
+                                </button>
+                                {isExpanded && (
+                                    <div className="pl-6 space-y-0.5 border-l border-slate-150 ml-5">
+                                        {item.subItems.map((sub) => (
+                                            <NavLink
+                                                key={sub.name}
+                                                to={sub.path}
+                                                onClick={onClose}
+                                                className={({ isActive }) =>
+                                                    `flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-150 group ${isActive
+                                                        ? 'bg-[#F3E8FF] text-[#7C3AED] font-bold shadow-xs'
+                                                        : 'text-[#5F6368] hover:bg-[#FAF5FF] font-medium'
+                                                    }`
+                                                }
+                                            >
+                                                <span className="text-[12px]">{t(sub.name)}</span>
+                                            </NavLink>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }
                     return (
                         <NavLink
                             key={item.name}

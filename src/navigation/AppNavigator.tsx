@@ -15,7 +15,7 @@ import type { UserRole } from '../components/UserTypeSelection';
 
 // Engines/Modules
 import DoctorDashboardEngine from '../engines/DashboardEngine/DoctorDashboardEngine';
-import PatientDashboardEngine from '../engines/DashboardEngine/PatientDashboardEngine';
+
 import ProfileLayout from '../screensModules/profile/ProfileLayout';
 import HelpSupportScreen from '../screensModules/support/HelpSupportScreen';
 import SettingsScreen from '../screensModules/settings/SettingsScreen';
@@ -31,18 +31,22 @@ import AvailabilityScreen from '../screensModules/availability/AvailabilityScree
 import ReviewsScreen from '../screensModules/reviews/ReviewsScreen';
 import NotificationsScreen from '../screensModules/notifications/NotificationsScreen';
 
-// Patient Screens
-import BookConsultationScreen from '../screensModules/patient/consultations/BookConsultationScreen';
-import MyRecordsScreen from '../screensModules/patient/records/MyRecordsScreen';
-import MyConsultationsScreen from '../screensModules/patient/consultations/MyConsultationsScreen';
-import PharmacyOrdersScreen from '../screensModules/patient/pharmacy/PharmacyOrdersScreen';
-import FamilyProfilesScreen from '../screensModules/patient/family/FamilyProfilesScreen';
+
 
 // Hospital Screens
 import HospitalDashboardEngine from '../engines/DashboardEngine/HospitalDashboardEngine';
 import BedsManagementScreen from '../screensModules/hospital/beds/BedsManagementScreen';
 import EmergencyScreen from '../screensModules/hospital/emergency/EmergencyScreen';
 import DepartmentsScreen from '../screensModules/hospital/departments/DepartmentsScreen';
+import BranchManagementScreen from '../screensModules/hospitalPortal/BranchManagementScreen';
+import DoctorManagementScreen from '../screensModules/hospitalPortal/DoctorManagementScreen';
+import StaffManagementScreen from '../screensModules/hospitalPortal/StaffManagementScreen';
+import IntegrationsScreen from '../screensModules/hospitalPortal/IntegrationsScreen';
+
+// Clinic Screens
+import ClinicDashboardEngine from '../engines/DashboardEngine/ClinicDashboardEngine';
+import ClinicProfileScreen from '../screensModules/clinicPortal/ClinicProfileScreen';
+import PartnerDoctorsScreen from '../screensModules/clinicPortal/PartnerDoctorsScreen';
 
 // Pharmacy Screens
 import PharmacyDashboardEngine from '../engines/DashboardEngine/PharmacyDashboardEngine';
@@ -68,11 +72,12 @@ import FleetManagementScreen from '../screensModules/ambulance/fleet/FleetManage
 import DriverRosterScreen from '../screensModules/ambulance/roster/DriverRosterScreen';
 
 import { useRole } from '../store/role/RoleContext';
+import { DashboardPage as HospitalPortalDashboard } from '../screensModules/hospitalPortal/DashboardPage';
 
 const DashboardRouter = () => {
   const { role } = useRole();
-  if (role === 'patient') return <PatientDashboardEngine />;
-  if (role === 'hospital') return <HospitalDashboardEngine />;
+  if (role === 'hospital') return <HospitalPortalDashboard />;
+  if (role === 'clinic') return <ClinicDashboardEngine />;
   if (role === 'pharmacy') return <PharmacyDashboardEngine />;
   if (role === 'diagnostic') return <DiagnosticDashboardEngine />;
   if (role === 'homecare') return <HomecareDashboardEngine />;
@@ -105,17 +110,22 @@ const AppNavigator = () => {
           <Route index element={<DashboardRouter />} />
         </Route>
 
-        {/* Patient Routes */}
-        <Route path="/find-doctors" element={<BookConsultationScreen />} />
-        <Route path="/my-records" element={<MyRecordsScreen />} />
-        <Route path="/my-consultations" element={<MyConsultationsScreen />} />
-        <Route path="/pharmacy-orders" element={<PharmacyOrdersScreen />} />
-        <Route path="/family-profiles" element={<FamilyProfilesScreen />} />
+
 
         {/* Hospital Routes */}
         <Route path="/hospital-beds" element={<BedsManagementScreen />} />
         <Route path="/hospital-emergency" element={<EmergencyScreen />} />
         <Route path="/hospital-departments" element={<DepartmentsScreen />} />
+        <Route path="/branches" element={<BranchManagementScreen />} />
+        <Route path="/doctors" element={<DoctorManagementScreen />} />
+        <Route path="/staff" element={<StaffManagementScreen />} />
+        <Route path="/settlement" element={<RevenueScreen />} />
+        <Route path="/integrations/pharmacy" element={<IntegrationsScreen />} />
+        <Route path="/integrations/laboratory" element={<IntegrationsScreen />} />
+        <Route path="/integrations/ambulance" element={<IntegrationsScreen />} />
+
+        {/* Clinic Routes */}
+        <Route path="/clinic-doctors" element={<PartnerDoctorsScreen />} />
 
         {/* Pharmacy Routes */}
         <Route path="/pharmacy-inventory" element={<InventoryScreen />} />
@@ -136,8 +146,8 @@ const AppNavigator = () => {
         <Route path="/ambulance-fleet" element={<FleetManagementScreen />} />
         <Route path="/ambulance-drivers" element={<DriverRosterScreen />} />
 
-        {/* Placeholders for other modules */}
-        <Route path="/profile" element={<ProfileLayout />} />
+        {/* Shared / Profile Routes (role-aware) */}
+        <Route path="/profile" element={<ProfileLayoutRouter />} />
         <Route path="/appointments" element={<AppointmentsScreen />} />
         <Route path="/appointments/create" element={<CreateAppointmentScreen />} />
         <Route path="/appointments/:appointmentId/consultation" element={<ConsultationScreen />} />
@@ -161,7 +171,15 @@ const AppNavigator = () => {
 
 export default AppNavigator;
 
+// ProfileLayoutRouter: routes clinic role to the dedicated ClinicProfileScreen
+const ProfileLayoutRouter = () => {
+  const { role } = useRole();
+  if (role === 'clinic') return <ClinicProfileScreen />;
+  return <ProfileLayout />;
+};
+
 // --- Wrappers to map props to React Router navigation ---
+
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const SplashWrapper = () => {

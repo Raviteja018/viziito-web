@@ -18,6 +18,10 @@ const MainLayout = () => {
   if (userString) {
     try {
       const user = JSON.parse(userString);
+      if (user?.role === 'patient') {
+        user.role = 'doctor';
+        localStorage.setItem('vizito_user', JSON.stringify(user));
+      }
       loggedInUserName = user?.fullName || user?.full_name || '';
     } catch (e) {
       console.error(e);
@@ -26,7 +30,6 @@ const MainLayout = () => {
 
   const displayName = loggedInUserName || (
     role === 'doctor' ? 'Dr. Arjun Reddy' :
-    role === 'patient' ? 'Meera' :
     role === 'clinic' ? 'City Care' :
     role === 'hospital' ? 'Hospital Admin' :
     role === 'pharmacy' ? 'MediPlus Pharmacy' :
@@ -61,7 +64,7 @@ const MainLayout = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 z-10 shrink-0">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 z-30 shrink-0">
 
           <div className="flex items-center gap-3 flex-1">
             {/* Hamburger - mobile only */}
@@ -161,7 +164,6 @@ const MainLayout = () => {
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer focus:border-teal-400 transition-colors"
                       >
                         <option value="doctor">Dr. Arjun Reddy</option>
-                        <option value="patient">Meera (Patient)</option>
                         <option value="clinic">City Care (Clinic)</option>
                         <option value="hospital">Apollo (Hospital)</option>
                         <option value="pharmacy">MediPlus (Pharmacy)</option>

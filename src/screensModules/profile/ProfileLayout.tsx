@@ -9,6 +9,8 @@ import {
   CheckCircle2, Clock, AlertCircle, ChevronRight
 } from 'lucide-react';
 import { MOCK_PROFILE_COMPLETION } from '../../mocks/doctorFlowMocks';
+import { useRole } from '../../store/role/RoleContext';
+import HospitalProfileScreen from '../hospitalPortal/HospitalProfileScreen';
 
 const tabs = [
   { id: 'personal', label: 'Personal Information', icon: User },
@@ -41,6 +43,11 @@ const StatusLabel = ({ status }: { status: string }) => {
 };
 
 const ProfileLayout = () => {
+  const { role } = useRole();
+  if (role === 'hospital') {
+    return <HospitalProfileScreen />;
+  }
+
   const [activeTab, setActiveTab] = useState('personal');
   const pct = MOCK_PROFILE_COMPLETION.percentage;
 

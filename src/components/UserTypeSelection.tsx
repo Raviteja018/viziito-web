@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 
 export type UserRole = 
-  | 'patient' 
   | 'doctor' 
   | 'clinic' 
   | 'hospital' 
@@ -29,14 +28,6 @@ interface UserTypeSelectionProps {
 
 export default function UserTypeSelection({ onSelectRole, onBackToLogin }: UserTypeSelectionProps) {
   const roles = [
-    {
-      id: 'patient' as UserRole,
-      title: "Patient / Health Seeker",
-      description: "Book consultations, order medicines, access test reports, and manage family medical files.",
-      icon: <User className="w-8 h-8 text-teal-600" />,
-      tag: "Individual",
-      color: "hover:border-teal-500/30 hover:shadow-teal-500/5 group-hover:bg-teal-50 group-hover:border-teal-100"
-    },
     {
       id: 'doctor' as UserRole,
       title: "Medical Doctor",

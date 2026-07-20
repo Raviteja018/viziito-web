@@ -252,7 +252,7 @@ const DoctorDashboardEngine = () => {
                     className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl hover:bg-[#FAF5FF]/45 border border-transparent hover:border-slate-200/40 hover:scale-105 active:scale-95 transition-all group w-full"
                   >
                     <div className={`w-9 h-9 rounded-xl ${action.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm`}>
-                      <Icon className="w-4 h-4" />
+                      <Icon className="w-4 h-4"/>
                     </div>
                     <span className="text-[9px] font-bold text-slate-500 text-center leading-tight line-clamp-2">
                       {action.label}

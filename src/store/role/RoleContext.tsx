@@ -9,7 +9,23 @@ interface RoleContextType {
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 export const RoleProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [role, setRole] = useState<UserRole | 'doctor'>('doctor'); // Defaulting to doctor for backward compatibility
+  const [roleState, setRoleState] = useState<UserRole | 'doctor'>(() => {
+    try {
+      const storedUser = localStorage.getItem('vizito_user');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.role && parsed.role !== 'patient') return parsed.role;
+      }
+    } catch (e) {}
+    return 'doctor';
+  });
+
+  const setRole = (newRole: UserRole | 'doctor') => {
+    const validRole = (newRole as string) === 'patient' ? 'doctor' : newRole;
+    setRoleState(validRole);
+  };
+
+  const role = (roleState as string) === 'patient' ? 'doctor' : roleState;
 
   return (
     <RoleContext.Provider value={{ role, setRole }}>

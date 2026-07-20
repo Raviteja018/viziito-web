@@ -23,7 +23,11 @@ import {
   FileText,
   SlidersHorizontal
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useRole } from '../../store/role/RoleContext';
+import { useHospitalRole } from '../../store/hospital/HospitalRoleContext';
+import { MOCK_BRANCHES, MOCK_DEPARTMENTS, MOCK_DOCTORS } from '../../mocks/hospitalMocks';
+import type { Appointment } from '../../screensModules/appointments/mockAppointments';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type SettlementStatus = 'Available' | 'Requested' | 'Processing' | 'Settled' | 'Rejected' | 'Pending'; // Pending is for future appointments
@@ -40,6 +44,8 @@ interface RevenueTransaction {
   netAmount: number;
   status: SettlementStatus;
   clinic: string;
+  doctorName?: string;
+  department?: string;
 }
 
 interface SettlementRequest {
@@ -75,9 +81,24 @@ const INITIAL_SETTLEMENTS: SettlementRequest[] = [
 
 export default function RevenueScreen() {
   const navigate = useNavigate();
+  const locationObj = useLocation();
+
+  const { role } = useRole();
+  const hospitalRoleContext = useHospitalRole();
+  const isHospital = role === 'hospital';
+  const subRole = hospitalRoleContext?.role; // 'admin' | 'receptionist'
+  const assignedBranch = hospitalRoleContext?.assignedBranch || '';
 
   // Tab views
-  const [activeViewTab, setActiveViewTab] = useState<'Overview' | 'Transactions' | 'Settlement History'>('Overview');
+  const [activeViewTab, setActiveViewTab] = useState<'Overview' | 'Transactions' | 'Settlement History'>(() => {
+    return locationObj.pathname.includes('/settlement') ? 'Settlement History' : 'Overview';
+  });
+
+  useEffect(() => {
+    if (locationObj.pathname.includes('/settlement')) {
+      setActiveViewTab('Settlement History');
+    }
+  }, [locationObj.pathname]);
 
   // Database lists
   const [transactions, setTransactions] = useState<RevenueTransaction[]>([]);
@@ -93,10 +114,26 @@ export default function RevenueScreen() {
   const [customStartDate, setCustomStartDate] = useState('2026-07-01');
   const [customEndDate, setCustomEndDate] = useState('2026-07-31');
   
-  const [clinicFilter, setClinicFilter] = useState<'All' | 'Apollo Hospital' | 'Care Clinic Banjara'>('All');
+  const [clinicFilter, setClinicFilter] = useState(() => {
+    if (role === 'hospital') {
+      return hospitalRoleContext?.role === 'receptionist' ? (hospitalRoleContext?.assignedBranch || '') : 'All';
+    }
+    return 'All';
+  });
   const [consultationTypeFilter, setConsultationTypeFilter] = useState<'All' | 'Walk-In' | 'In-Clinic' | 'Video Consultation' | 'Home Visit'>('All');
   const [revenueStatusFilter, setRevenueStatusFilter] = useState<'All' | 'Available' | 'Requested' | 'Processing' | 'Settled' | 'Rejected'>('All');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Hospital specific filters
+  const [doctorFilter, setDoctorFilter] = useState('All');
+  const [deptFilter, setDeptFilter] = useState('All');
+
+  const [showClinicDropdown, setShowClinicDropdown] = useState(false);
+  const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
+  const [showDeptDropdown, setShowDeptDropdown] = useState(false);
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -124,8 +161,90 @@ export default function RevenueScreen() {
     const savedTxns = localStorage.getItem('vizito_revenue_transactions');
     const savedSets = localStorage.getItem('vizito_settlement_history');
 
-    let loadedTxns = savedTxns ? JSON.parse(savedTxns) : INITIAL_TRANSACTIONS;
+    let loadedTxns = savedTxns ? JSON.parse(savedTxns) : [];
     let loadedSets = savedSets ? JSON.parse(savedSets) : INITIAL_SETTLEMENTS;
+
+    const cleanDateToISO = (dateStr: string) => {
+      if (!dateStr) return '2026-07-14';
+      const months: Record<string, string> = {
+        Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06',
+        Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12'
+      };
+      const parts = dateStr.split(' ');
+      if (parts.length === 3) {
+        const day = parts[0].padStart(2, '0');
+        const month = months[parts[1]] ?? '01';
+        const year = parts[2];
+        return `${year}-${month}-${day}`;
+      }
+      return dateStr;
+    };
+
+    const cleanTimeTo24h = (timeStr: string) => {
+      if (!timeStr) return '10:00';
+      let [time, modifier] = timeStr.split(' ');
+      let [hours, minutes] = time.split(':');
+      if (hours === '12') {
+        hours = '00';
+      }
+      if (modifier === 'PM') {
+        hours = String(parseInt(hours, 10) + 12);
+      }
+      return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+    };
+
+    if (isHospital) {
+      // Load and sync from appointments
+      const savedAppsStr = localStorage.getItem('vizito_appointments');
+      const appointments: Appointment[] = savedAppsStr ? JSON.parse(savedAppsStr) : [];
+      
+      const updatedTxns = [...loadedTxns];
+      
+      appointments.forEach((apt: any) => {
+        const isValid = ['Confirmed', 'Checked In', 'Completed'].includes(apt.status);
+        if (!isValid) return;
+        
+        const exists = updatedTxns.some(t => t.apptId === apt.id);
+        if (!exists) {
+          const gross = apt.amount || 800;
+          const fee = Math.round(gross * 0.15); // 15% platform fee
+          const net = gross - fee;
+          
+          const apptDateStr = cleanDateToISO(apt.date);
+          const apptTime24 = cleanTimeTo24h(apt.time);
+          const apptDateTime = `${apptDateStr} ${apptTime24}`;
+          
+          let status: SettlementStatus = 'Available';
+          if (apt.status === 'Completed') {
+            status = 'Settled';
+          } else if (apt.status === 'Confirmed') {
+            status = 'Pending';
+          }
+          
+          updatedTxns.push({
+            id: `TX${apt.id.replace(/\D/g, '') || String(1000 + updatedTxns.length)}`,
+            apptId: apt.id,
+            patientName: apt.patient,
+            consultationType: apt.type,
+            apptDateTime,
+            apptDisplayDate: `${apt.date} ${apt.time}`,
+            grossAmount: gross,
+            platformFee: fee,
+            netAmount: net,
+            status,
+            clinic: apt.location,
+            doctorName: apt.doctorName || 'Dr. Arjun Reddy',
+            department: apt.department || 'General Medicine'
+          });
+        }
+      });
+      
+      loadedTxns = updatedTxns;
+    } else {
+      if (loadedTxns.length === 0) {
+        loadedTxns = INITIAL_TRANSACTIONS;
+      }
+    }
 
     // Apply eligibility logic relative to July 14, 2026 10:41 AM
     loadedTxns = loadedTxns.map((t: RevenueTransaction) => {
@@ -140,7 +259,7 @@ export default function RevenueScreen() {
     setSettlementHistory(loadedSets);
     localStorage.setItem('vizito_revenue_transactions', JSON.stringify(loadedTxns));
     localStorage.setItem('vizito_settlement_history', JSON.stringify(loadedSets));
-  }, []);
+  }, [isHospital]);
 
   const syncTransactions = (updated: RevenueTransaction[]) => {
     setTransactions(updated);
@@ -209,8 +328,14 @@ export default function RevenueScreen() {
         t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         t.apptId.toLowerCase().includes(searchQuery.toLowerCase());
 
-      // Clinic Filter
+      // Clinic / Branch Filter
       if (clinicFilter !== 'All' && t.clinic !== clinicFilter) return false;
+
+      // Hospital Doctor & Department Filters
+      if (isHospital) {
+        if (doctorFilter !== 'All' && t.doctorName !== doctorFilter) return false;
+        if (deptFilter !== 'All' && t.department !== deptFilter) return false;
+      }
 
       // Consultation Type Filter
       if (consultationTypeFilter !== 'All' && t.consultationType !== consultationTypeFilter) return false;
@@ -221,31 +346,31 @@ export default function RevenueScreen() {
       // Date Filter
       const apptDate = new Date(t.apptDateTime.split(' ')[0]);
       if (dateFilter === 'Today') {
-        return t.apptDateTime.startsWith('2026-07-14');
+        return t.apptDateTime.startsWith('2026-07-14') && matchesSearch;
       }
       if (dateFilter === 'Yesterday') {
-        return t.apptDateTime.startsWith('2026-07-13');
+        return t.apptDateTime.startsWith('2026-07-13') && matchesSearch;
       }
       if (dateFilter === 'This Week') {
         const day = apptDate.getDate();
-        return day >= 12 && day <= 18; // Week of July 12 - July 18, 2026
+        return day >= 12 && day <= 18 && matchesSearch; // Week of July 12 - July 18, 2026
       }
       if (dateFilter === 'This Month') {
-        return t.apptDateTime.startsWith('2026-07');
+        return t.apptDateTime.startsWith('2026-07') && matchesSearch;
       }
       if (dateFilter === 'Last Month') {
-        return t.apptDateTime.startsWith('2026-06');
+        return t.apptDateTime.startsWith('2026-06') && matchesSearch;
       }
       if (dateFilter === 'Custom') {
         const start = new Date(customStartDate).getTime();
         const end = new Date(customEndDate).getTime();
         const apptSec = apptDate.getTime();
-        return apptSec >= start && apptSec <= end;
+        return apptSec >= start && apptSec <= end && matchesSearch;
       }
 
       return matchesSearch;
     });
-  }, [transactions, searchQuery, clinicFilter, consultationTypeFilter, revenueStatusFilter, dateFilter, customStartDate, customEndDate]);
+  }, [transactions, searchQuery, clinicFilter, consultationTypeFilter, revenueStatusFilter, dateFilter, customStartDate, customEndDate, doctorFilter, deptFilter, isHospital]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / pageSize));
   const paginatedTransactions = useMemo(() => {
@@ -320,8 +445,17 @@ export default function RevenueScreen() {
     showToast(`Successfully compiled and exported ${filteredTransactions.length} records to ${format} format.`, 'success');
   };
 
+  if (isHospital && subRole === 'receptionist') {
+    return (
+      <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl shadow-sm font-sans">
+        <h2 className="text-lg font-black text-rose-600 mb-2">Access Denied</h2>
+        <p className="text-sm text-slate-500 font-bold">Receptionists are not authorized to view financial and settlement details.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       
       {/* Toast Alert */}
       {toast && (
@@ -334,8 +468,14 @@ export default function RevenueScreen() {
       {/* Header Panel */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#2B2B2B] tracking-tight">Revenue &amp; Settlement</h1>
-          <p className="text-xs font-semibold text-slate-500 mt-1">Track consultations earnings, check platform fees, and request settlement transfers</p>
+          <h1 className="text-2xl font-extrabold text-[#2B2B2B] tracking-tight">
+            {isHospital ? 'Hospital Revenue & Settlement' : 'Revenue & Settlement'}
+          </h1>
+          <p className="text-xs font-semibold text-slate-500 mt-1">
+            {isHospital 
+              ? 'Track hospital-wide branches consultation earnings, check platform fees, and request settlement transfers'
+              : 'Track consultations earnings, check platform fees, and request settlement transfers'}
+          </p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3 shrink-0">
@@ -362,10 +502,10 @@ export default function RevenueScreen() {
       {/* Revenue Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { title: 'Total Revenue', val: totalRevenueSum, color: 'bg-purple-50 text-[#7C3AED]', clickAction: () => { setActiveViewTab('Transactions'); setRevenueStatusFilter('All'); } },
-          { title: 'Available Balance', val: availableBalance, color: 'bg-emerald-50 text-emerald-700', clickAction: () => { setActiveViewTab('Transactions'); setRevenueStatusFilter('Available'); } },
-          { title: 'Requested Amount', val: requestedAmount, color: 'bg-blue-50 text-blue-700', clickAction: () => { setActiveViewTab('Settlement History'); } },
-          { title: 'Settled Amount', val: settledAmount, color: 'bg-indigo-50 text-indigo-700', clickAction: () => { setActiveViewTab('Settlement History'); } }
+          { title: isHospital ? 'Total Hospital Revenue' : 'Total Revenue', val: totalRevenueSum, color: 'bg-purple-50 text-[#7C3AED]', clickAction: () => { setActiveViewTab('Transactions'); setRevenueStatusFilter('All'); } },
+          { title: isHospital ? 'Available Settlement' : 'Available Balance', val: availableBalance, color: 'bg-emerald-50 text-emerald-700', clickAction: () => { setActiveViewTab('Transactions'); setRevenueStatusFilter('Available'); } },
+          { title: isHospital ? 'Requested Payouts' : 'Requested Amount', val: requestedAmount, color: 'bg-blue-50 text-blue-700', clickAction: () => { setActiveViewTab('Settlement History'); } },
+          { title: isHospital ? 'Settled Payouts' : 'Settled Amount', val: settledAmount, color: 'bg-indigo-50 text-indigo-700', clickAction: () => { setActiveViewTab('Settlement History'); } }
         ].map(card => (
           <div
             key={card.title}
@@ -486,17 +626,59 @@ export default function RevenueScreen() {
             </div>
 
             <div>
-              <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Clinic Selection</label>
+              <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">
+                {isHospital ? 'Branch Selection' : 'Clinic Selection'}
+              </label>
               <select
                 value={clinicFilter}
                 onChange={e => setClinicFilter(e.target.value as any)}
                 className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold outline-none cursor-pointer"
               >
-                <option value="All">All Clinics</option>
-                <option value="Apollo Hospital">Apollo Hospital</option>
-                <option value="Care Clinic Banjara">Care Clinic Banjara</option>
+                <option value="All">{isHospital ? 'All Branches' : 'All Clinics'}</option>
+                {isHospital ? (
+                  MOCK_BRANCHES.filter(b => b.status === 'Active').map(b => (
+                    <option key={b.name} value={b.name}>{b.name}</option>
+                  ))
+                ) : (
+                  <>
+                    <option value="Apollo Hospital">Apollo Hospital</option>
+                    <option value="Care Clinic Banjara">Care Clinic Banjara</option>
+                  </>
+                )}
               </select>
             </div>
+
+            {isHospital && (
+              <>
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Doctor Selection</label>
+                  <select
+                    value={doctorFilter}
+                    onChange={e => setDoctorFilter(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold outline-none cursor-pointer"
+                  >
+                    <option value="All">All Doctors</option>
+                    {MOCK_DOCTORS.map(d => (
+                      <option key={d.name} value={d.name}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Department Selection</label>
+                  <select
+                    value={deptFilter}
+                    onChange={e => setDeptFilter(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold outline-none cursor-pointer"
+                  >
+                    <option value="All">All Departments</option>
+                    {MOCK_DEPARTMENTS.filter(dep => dep.status === 'Active').map(dep => (
+                      <option key={dep.name} value={dep.name}>{dep.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
 
             <div>
               <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Consultation Format</label>
@@ -599,9 +781,18 @@ export default function RevenueScreen() {
                     <tr key={txn.id} className="hover:bg-slate-50/50">
                       <td className="p-3 font-mono font-bold text-slate-800">{txn.id}</td>
                       <td className="p-3 font-mono text-slate-650">{txn.apptId}</td>
-                      <td className="p-3 font-black text-slate-800">{txn.patientName}</td>
-                      <td className="p-3 text-slate-500">{txn.consultationType}</td>
-                      <td className="p-3 text-slate-600">{txn.apptDisplayDate}</td>
+                      <td className="p-3">
+                        <div className="font-black text-slate-800">{txn.patientName}</div>
+                        {isHospital && <div className="text-[9px] text-slate-400 font-bold mt-0.5">{txn.doctorName || 'Dr. Arjun Reddy'}</div>}
+                      </td>
+                      <td className="p-3 text-slate-500">
+                        <div>{txn.consultationType}</div>
+                        {isHospital && <div className="text-[9px] text-purple-600 font-bold mt-0.5">{txn.department || 'General Medicine'}</div>}
+                      </td>
+                      <td className="p-3 text-slate-600">
+                        <div>{txn.apptDisplayDate}</div>
+                        {isHospital && <div className="text-[9px] text-slate-400 font-bold mt-0.5">{txn.clinic}</div>}
+                      </td>
                       <td className="p-3 text-right text-slate-700">₹{txn.grossAmount}</td>
                       <td className="p-3 text-right text-rose-500">-₹{txn.platformFee}</td>
                       <td className="p-3 text-right text-slate-900 font-black">₹{txn.netAmount}</td>

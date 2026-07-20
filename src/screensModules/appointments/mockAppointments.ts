@@ -40,6 +40,11 @@ export interface Appointment {
   timeline: TimelineEntry[];
   documents: { name: string; date: string; size: string }[];
   prescription?: Prescription;
+  doctorName?: string;
+  department?: string;
+  patientName?: string;
+  branchName?: string;
+  timeSlot?: string;
 }
 
 export const getRelativeDisplayDate = (offsetDays: number): string => {
